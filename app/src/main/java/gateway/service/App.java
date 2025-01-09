@@ -3,12 +3,26 @@
  */
 package gateway.service;
 
-public class App {
-    public String getGreeting() {
-        return "Hello World!";
-    }
+import gateway.service.utils.Constants;
+import gateway.service.utils.SystemPropertyUtils;
+import java.util.List;
+import java.util.Map;
 
-    public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+public class App {
+
+  public static void main(String[] args) {
+    validateInitArgs();
+  }
+
+  private static void validateInitArgs() {
+    final Map<String, String> properties = SystemPropertyUtils.getAllSystemEnvProperties();
+    final List<String> requiredEnvProperties =
+        Constants.ENV_KEY_NAMES.stream().filter(key -> !Constants.ENV_PORT.equals(key)).toList();
+    final List<String> errors =
+        requiredEnvProperties.stream().filter(key -> properties.get(key) == null).toList();
+    if (!errors.isEmpty()) {
+      throw new IllegalStateException(
+          "One or more environment configurations could not be accessed...");
     }
+  }
 }

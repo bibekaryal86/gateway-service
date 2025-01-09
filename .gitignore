@@ -25,3 +25,5 @@ build
 
 # Ignore IDE files
 .idea
+
+gcp/app-credentials.yaml
