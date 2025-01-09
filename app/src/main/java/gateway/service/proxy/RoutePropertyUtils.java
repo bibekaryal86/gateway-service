@@ -1,4 +1,4 @@
-package gateway.service.utils;
+package gateway.service.proxy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gateway.service.dtos.EnvDetailsResponse;
@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import gateway.service.utils.Common;
+import gateway.service.utils.Constants;
+import gateway.service.utils.Connector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,17 +24,17 @@ public class RoutePropertyUtils {
   private static List<String> AUTH_EXCLUSIONS = new ArrayList<>();
 
   private static final String ROUTE_API_URL =
-      SystemPropertyUtils.getSystemEnvProperty(Constants.ROUTES_MAP_URL);
+      Common.getSystemEnvProperty(Constants.ROUTES_MAP_URL);
   private static final String ROUTE_API_AUTH =
-      HttpUtils.createBasicAuthHeader(
-          SystemPropertyUtils.getSystemEnvProperty(Constants.ENVSVC_USR),
-          SystemPropertyUtils.getSystemEnvProperty(Constants.ENVSVC_PWD));
+      Connector.createBasicAuthHeader(
+              Common.getSystemEnvProperty(Constants.ENVSVC_USR),
+              Common.getSystemEnvProperty(Constants.ENVSVC_PWD));
 
   public static void init() {
     log.info("Retrieving Env Details...");
 
-    HttpUtils.HttpResponse response =
-        HttpUtils.sendRequest(ROUTE_API_URL, "GET", "", null, ROUTE_API_AUTH);
+    Connector.HttpResponse response =
+        Connector.sendRequest(ROUTE_API_URL, "GET", "", null, ROUTE_API_AUTH);
 
     if (response.statusCode() == 200) {
       try {
@@ -61,7 +65,7 @@ public class RoutePropertyUtils {
                                   String.format(
                                       "%s_%s",
                                       Constants.BASE_URLS_NAME_BEGINS_WITH,
-                                      SystemPropertyUtils.getSystemEnvProperty(
+                                          Common.getSystemEnvProperty(
                                               Constants.SPRING_PROFILES_ACTIVE)
                                           .toUpperCase())))
                   .findFirst()

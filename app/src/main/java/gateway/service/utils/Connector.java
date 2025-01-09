@@ -13,8 +13,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HttpUtils {
-  private static final Logger log = LoggerFactory.getLogger(HttpUtils.class);
+public class Connector {
+  private static final Logger log = LoggerFactory.getLogger(Connector.class);
 
   public static HttpResponse sendRequest(
       final String url,

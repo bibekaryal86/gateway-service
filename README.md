@@ -1,1 +1,3 @@
 # gateway-service
+
+DO NOT FORGET THE RESTRICTED-HEADERS

@@ -24,4 +24,7 @@ public class Constants {
   // ENV DETAILS
   public static final String AUTH_EXCLUSIONS_NAME = "AUTH_EXCLUSIONS_ENDS_WITH";
   public static final String BASE_URLS_NAME_BEGINS_WITH = "BASE_URLS";
+
+  // OTHERS
+  public static final String PRODUCTION_ENV = "PRODUCTION";
 }

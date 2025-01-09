@@ -3,9 +3,10 @@
  */
 package gateway.service;
 
+import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
-import gateway.service.utils.RoutePropertyUtils;
-import gateway.service.utils.SystemPropertyUtils;
+import gateway.service.proxy.RoutePropertyUtils;
+
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +18,7 @@ public class App {
   }
 
   private static void validateInitArgs() {
-    final Map<String, String> properties = SystemPropertyUtils.getAllSystemEnvProperties();
+    final Map<String, String> properties = Common.getAllSystemEnvProperties();
     final List<String> requiredEnvProperties =
         Constants.ENV_KEY_NAMES.stream().filter(key -> !Constants.ENV_PORT.equals(key)).toList();
     final List<String> errors =
