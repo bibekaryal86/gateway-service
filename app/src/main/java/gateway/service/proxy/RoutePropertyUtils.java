@@ -2,16 +2,15 @@ package gateway.service.proxy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gateway.service.dtos.EnvDetailsResponse;
+import gateway.service.utils.Common;
+import gateway.service.utils.Connector;
+import gateway.service.utils.Constants;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import gateway.service.utils.Common;
-import gateway.service.utils.Constants;
-import gateway.service.utils.Connector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,12 +22,11 @@ public class RoutePropertyUtils {
   private static Map<String, String> ROUTES_MAP = new HashMap<>();
   private static List<String> AUTH_EXCLUSIONS = new ArrayList<>();
 
-  private static final String ROUTE_API_URL =
-      Common.getSystemEnvProperty(Constants.ROUTES_MAP_URL);
+  private static final String ROUTE_API_URL = Common.getSystemEnvProperty(Constants.ROUTES_MAP_URL);
   private static final String ROUTE_API_AUTH =
       Connector.createBasicAuthHeader(
-              Common.getSystemEnvProperty(Constants.ENVSVC_USR),
-              Common.getSystemEnvProperty(Constants.ENVSVC_PWD));
+          Common.getSystemEnvProperty(Constants.ENVSVC_USR),
+          Common.getSystemEnvProperty(Constants.ENVSVC_PWD));
 
   public static void init() {
     log.info("Retrieving Env Details...");
@@ -65,8 +63,7 @@ public class RoutePropertyUtils {
                                   String.format(
                                       "%s_%s",
                                       Constants.BASE_URLS_NAME_BEGINS_WITH,
-                                          Common.getSystemEnvProperty(
-                                              Constants.SPRING_PROFILES_ACTIVE)
+                                      Common.getSystemEnvProperty(Constants.SPRING_PROFILES_ACTIVE)
                                           .toUpperCase())))
                   .findFirst()
                   .orElseThrow()

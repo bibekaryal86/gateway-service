@@ -1,20 +1,27 @@
 package gateway.service.utils;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Connector {
   private static final Logger log = LoggerFactory.getLogger(Connector.class);
+
+  private static final OkHttpClient okHttpClient =
+      new OkHttpClient.Builder()
+          .connectTimeout(5, TimeUnit.SECONDS)
+          .readTimeout(15, TimeUnit.SECONDS)
+          .build();
 
   public static HttpResponse sendRequest(
       final String url,
@@ -22,60 +29,45 @@ public class Connector {
       final String requestBody,
       final Map<String, String> headers,
       final String authorization) {
-    HttpURLConnection connection = null;
-    final StringBuilder response = new StringBuilder();
-    int responseCode = -1;
-
-    try {
-      // Create URL object
-      final URL apiUrl = URI.create(url).toURL();
-      connection = (HttpURLConnection) apiUrl.openConnection();
-      connection.setRequestMethod(method);
-      connection.setConnectTimeout(5000);
-      connection.setReadTimeout(5000);
-
-      // Set Authorization header if provided
-      if (authorization != null && !authorization.isEmpty()) {
-        connection.setRequestProperty("Authorization", authorization);
-      }
-
-      // Set additional custom headers if provided
-      if (headers != null) {
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-          connection.setRequestProperty(entry.getKey(), entry.getValue());
-        }
-      }
-
-      // If there is a request body, write it to the connection
-      if (requestBody != null && !requestBody.isEmpty()) {
-        connection.setDoOutput(true);
-        try (final OutputStream os = connection.getOutputStream()) {
-          final byte[] input = requestBody.getBytes(StandardCharsets.UTF_8);
-          os.write(input, 0, input.length);
-        }
-      }
-
-      // Get the response code from the API
-      responseCode = connection.getResponseCode();
-
-      // Read the response body if available
-      try (final BufferedReader br =
-          new BufferedReader(
-              new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
-        String line;
-        while ((line = br.readLine()) != null) {
-          response.append(line);
-        }
-      }
+    Request request = buildRequest(url, method, requestBody, headers, authorization);
+    try (Response response = okHttpClient.newCall(request).execute()) {
+      int responseCode = response.code();
+      String responseBody = response.body() == null ? "" : response.body().string();
+      return new HttpResponse(responseCode, responseBody);
     } catch (IOException ex) {
-      log.error("Error sending request: [{}]|[{}]", method, url, ex);
-    } finally {
-      if (connection != null) {
-        connection.disconnect();
+      log.error("Error Sending Http Request: [{}]|[{}]", method, url, ex);
+      try {
+        Map<String, String> errorMap = Map.of("errMsg", ex.getMessage());
+        return new HttpResponse(-1, Common.objectMapperProvider().writeValueAsString(errorMap));
+      } catch (JsonProcessingException e) {
+        return new HttpResponse(-1, "{\"errMsg\":\"HTTP Request/Response Serialization Error\"}");
+      }
+    }
+  }
+
+  private static Request buildRequest(
+      final String url,
+      final String method,
+      final String requestBody,
+      final Map<String, String> headers,
+      final String authorization) {
+    RequestBody body =
+        Common.isEmpty(requestBody)
+            ? null
+            : RequestBody.create(requestBody, MediaType.parse("application/json"));
+    Request.Builder requestBuilder = new Request.Builder().url(url).method(method, body);
+
+    if (authorization != null && !authorization.isEmpty()) {
+      requestBuilder.header("Authorization", authorization);
+    }
+
+    if (headers != null) {
+      for (Map.Entry<String, String> entry : headers.entrySet()) {
+        requestBuilder.header(entry.getKey(), entry.getValue());
       }
     }
 
-    return new HttpResponse(responseCode, response.toString());
+    return requestBuilder.build();
   }
 
   public static String createBasicAuthHeader(final String username, final String password) {

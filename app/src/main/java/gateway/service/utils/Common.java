@@ -17,19 +17,19 @@ public class Common {
 
     final Properties systemProperties = System.getProperties();
     systemProperties.forEach(
-            (key, value) -> {
-              if (Constants.ENV_KEY_NAMES.contains(key.toString())) {
-                tempMap.put((String) key, (String) value);
-              }
-            });
+        (key, value) -> {
+          if (Constants.ENV_KEY_NAMES.contains(key.toString())) {
+            tempMap.put((String) key, (String) value);
+          }
+        });
 
     final Map<String, String> envVariables = System.getenv();
     envVariables.forEach(
-            (key, value) -> {
-              if (Constants.ENV_KEY_NAMES.contains(key)) {
-                tempMap.put(key, value);
-              }
-            });
+        (key, value) -> {
+          if (Constants.ENV_KEY_NAMES.contains(key)) {
+            tempMap.put(key, value);
+          }
+        });
 
     propertiesMap = Collections.unmodifiableMap(tempMap);
   }
@@ -59,7 +59,8 @@ public class Common {
   }
 
   public static boolean isProduction() {
-    return Constants.PRODUCTION_ENV.equalsIgnoreCase(getSystemEnvProperty(Constants.SPRING_PROFILES_ACTIVE));
+    return Constants.PRODUCTION_ENV.equalsIgnoreCase(
+        getSystemEnvProperty(Constants.SPRING_PROFILES_ACTIVE));
   }
 
   public static ObjectMapper objectMapperProvider() {

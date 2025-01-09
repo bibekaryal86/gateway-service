@@ -3,10 +3,9 @@
  */
 package gateway.service;
 
+import gateway.service.proxy.RoutePropertyUtils;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
-import gateway.service.proxy.RoutePropertyUtils;
-
 import java.util.List;
 import java.util.Map;
 
