@@ -6,6 +6,12 @@
  * This project uses @Incubating APIs which are subject to change.
  */
 
+buildscript {
+    dependencies {
+        classpath 'org.yaml:snakeyaml:2.3'
+    }
+}
+
 plugins {
     id 'application'
     id 'java'
@@ -60,5 +66,36 @@ spotless {
     java {
         removeUnusedImports()
         googleJavaFormat()
+    }
+}
+
+// everything below is for local development only
+import org.yaml.snakeyaml.Yaml
+
+def loadAppCredentialsEnvVariables() {
+    def file = file('../gcp/app-credentials.yaml')
+    if (file.exists()) {
+        def data = new Yaml().load(file.text)
+        def properties = new Properties()
+
+        if (data?.env_variables) {
+            data.env_variables.each { key, value ->
+                properties.setProperty(key, value)
+            }
+        }
+        return properties
+    } else {
+        println "Warning: app-credentials.yaml file not found!"
+        return new Properties()
+    }
+}
+
+def yamlProperties = loadAppCredentialsEnvVariables()
+
+run {
+    doFirst {
+        yamlProperties.each { key, value ->
+            environment key, value
+        }
     }
 }

@@ -4,6 +4,7 @@
 package gateway.service;
 
 import gateway.service.utils.Constants;
+import gateway.service.utils.RoutePropertyUtils;
 import gateway.service.utils.SystemPropertyUtils;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ public class App {
 
   public static void main(String[] args) {
     validateInitArgs();
+    RoutePropertyUtils.refreshRoutes();
   }
 
   private static void validateInitArgs() {

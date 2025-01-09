@@ -1,8 +1,7 @@
 package gateway.service.utils;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import gateway.service.dtos.EnvDetails;
+import gateway.service.dtos.EnvDetailsResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +14,8 @@ import org.slf4j.LoggerFactory;
 public class RoutePropertyUtils {
   private static final Logger log = LoggerFactory.getLogger(RoutePropertyUtils.class);
 
+  private static Timer timer;
+  private static final long REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes
   private static Map<String, String> ROUTES_MAP = new HashMap<>();
   private static List<String> AUTH_EXCLUSIONS = new ArrayList<>();
 
@@ -26,7 +27,7 @@ public class RoutePropertyUtils {
           SystemPropertyUtils.getSystemEnvProperty(Constants.ENVSVC_PWD));
 
   public static void init() {
-    refreshRoutesPeriodically();
+    log.info("Retrieving Env Details...");
 
     HttpUtils.HttpResponse response =
         HttpUtils.sendRequest(ROUTE_API_URL, "GET", "", null, ROUTE_API_AUTH);
@@ -34,36 +35,44 @@ public class RoutePropertyUtils {
     if (response.statusCode() == 200) {
       try {
         final ObjectMapper objectMapper = Common.objectMapperProvider();
-        List<EnvDetails> envDetails =
-            objectMapper.readValue(response.responseBody(), new TypeReference<>() {});
-        log.info("Gateway Service Env Details Retrieved Successfully: [{}]", envDetails.size());
+        EnvDetailsResponse envDetailResponse =
+            objectMapper.readValue(response.responseBody(), EnvDetailsResponse.class);
 
-        AUTH_EXCLUSIONS =
-            envDetails.stream()
-                .filter(envDetail -> envDetail.getName().equals(Constants.AUTH_EXCLUSIONS_NAME))
-                .findFirst()
-                .orElseThrow()
-                .getListValue();
-        log.info(
-            "Gateway Service Env Details Auth Exclusions List Size: [{}]", AUTH_EXCLUSIONS.size());
+        if (Common.isEmpty(envDetailResponse.getErrMsg())) {
+          List<EnvDetailsResponse.EnvDetails> envDetailsList = envDetailResponse.getEnvDetails();
 
-        ROUTES_MAP =
-            envDetails.stream()
-                .filter(
-                    envDetail ->
-                        envDetail
-                            .getName()
-                            .equals(
-                                String.format(
-                                    "%s_%s",
-                                    Constants.BASE_URLS_NAME_BEGINS_WITH,
-                                    SystemPropertyUtils.getSystemEnvProperty(
-                                            Constants.SPRING_PROFILES_ACTIVE)
-                                        .toUpperCase())))
-                .findFirst()
-                .orElseThrow()
-                .getMapValue();
-        log.info("Gateway Service Env Details Routes Map Size: [{}]", ROUTES_MAP.size());
+          AUTH_EXCLUSIONS =
+              envDetailsList.stream()
+                  .filter(envDetail -> envDetail.getName().equals(Constants.AUTH_EXCLUSIONS_NAME))
+                  .findFirst()
+                  .orElseThrow()
+                  .getListValue();
+          log.info(
+              "Gateway Service Env Details Auth Exclusions List Size: [{}]",
+              AUTH_EXCLUSIONS.size());
+
+          ROUTES_MAP =
+              envDetailsList.stream()
+                  .filter(
+                      envDetail ->
+                          envDetail
+                              .getName()
+                              .equals(
+                                  String.format(
+                                      "%s_%s",
+                                      Constants.BASE_URLS_NAME_BEGINS_WITH,
+                                      SystemPropertyUtils.getSystemEnvProperty(
+                                              Constants.SPRING_PROFILES_ACTIVE)
+                                          .toUpperCase())))
+                  .findFirst()
+                  .orElseThrow()
+                  .getMapValue();
+          log.info("Gateway Service Env Details Routes Map Size: [{}]", ROUTES_MAP.size());
+        } else {
+          log.info(
+              "Failed to Fetch Gateway Service Env Details, Error Response: [{}]",
+              envDetailResponse.getErrMsg());
+        }
       } catch (Exception ex) {
         log.error("Error Retrieving Env Details, Auth Exclusions, Routes Map...", ex);
       }
@@ -87,13 +96,18 @@ public class RoutePropertyUtils {
     return null;
   }
 
+  public static Map<String, String> getRoutesMap() {
+    return ROUTES_MAP;
+  }
+
   public static List<String> getAuthExclusions() {
     return AUTH_EXCLUSIONS;
   }
 
   // Refresh routes periodically
-  private static void refreshRoutesPeriodically() {
-    Timer timer = new Timer();
+  public static void refreshRoutes() {
+    log.info("Starting up timer...");
+    timer = new Timer();
     timer.schedule(
         new TimerTask() {
           @Override
@@ -101,7 +115,21 @@ public class RoutePropertyUtils {
             init();
           }
         },
-        7 * 60 * 1000,
-        7 * 60 * 1000); // every 7 minutes
+        0, // Initial delay
+        REFRESH_INTERVAL // Subsequent delay rate
+        );
+
+    // Add a shutdown hook to gracefully stop the timer
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  log.info("Shutting down timer...");
+                  if (timer != null) {
+                    timer.cancel();
+                    timer.purge(); // Removes all canceled tasks from the timer's task queue
+                    timer = null;
+                  }
+                }));
   }
 }
