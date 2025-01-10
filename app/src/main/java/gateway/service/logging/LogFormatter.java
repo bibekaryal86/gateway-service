@@ -7,8 +7,9 @@ import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import gateway.service.utils.Constants;
+
 public class LogFormatter extends Formatter {
-  private static final String THIS_APP_NAME = "gatewaysvc";
   private static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
   private static final String TIME_ZONE = "America/Denver";
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
@@ -37,7 +38,7 @@ public class LogFormatter extends Formatter {
 
     return String.format(
         "[%s][%s][%s][%s][%s]---%s%n",
-        timestamp, THIS_APP_NAME, threadName, level, loggerName, message);
+        timestamp, Constants.THIS_APP_NAME, threadName, level, loggerName, message);
   }
 
   private String getShortLoggerName(String loggerName) {

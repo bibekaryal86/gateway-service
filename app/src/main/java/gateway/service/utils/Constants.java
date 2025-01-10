@@ -27,6 +27,7 @@ public class Constants {
   public static final String BASE_URLS_NAME_BEGINS_WITH = "BASE_URLS";
 
   // OTHERS
+  public static final String THIS_APP_NAME = "gatewaysvc";
   public static final String ENV_PORT_DEFAULT = "8000";
   public static final String PRODUCTION_ENV = "PRODUCTION";
   public static final String CONTENT_TYPE_JSON = "application/json";
