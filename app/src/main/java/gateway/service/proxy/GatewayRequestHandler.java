@@ -137,6 +137,13 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
     @Override
     public void exceptionCaught(final ChannelHandlerContext channelHandlerContext, final Throwable throwable) {
         log.error("Exception in Gateway Request Handler...", throwable);
+
+        String backendHost = "";
+        final CircuitBreaker circuitBreaker =
+                circuitBreakers.computeIfAbsent(
+                        backendHost, key -> new CircuitBreaker(key, 3, Duration.ofSeconds(5)));
+        circuitBreaker.markFailure();
+
         channelHandlerContext.close();
     }
 }
