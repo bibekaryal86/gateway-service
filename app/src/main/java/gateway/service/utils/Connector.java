@@ -1,11 +1,10 @@
 package gateway.service.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

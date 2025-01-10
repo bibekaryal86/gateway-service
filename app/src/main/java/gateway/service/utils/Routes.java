@@ -1,10 +1,7 @@
-package gateway.service.proxy;
+package gateway.service.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gateway.service.dtos.EnvDetailsResponse;
-import gateway.service.utils.Common;
-import gateway.service.utils.Connector;
-import gateway.service.utils.Constants;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,8 +11,8 @@ import java.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RoutePropertyUtils {
-  private static final Logger log = LoggerFactory.getLogger(RoutePropertyUtils.class);
+public class Routes {
+  private static final Logger log = LoggerFactory.getLogger(Routes.class);
 
   private static Timer timer;
   private static final long REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes

@@ -3,9 +3,9 @@
  */
 package gateway.service;
 
-import gateway.service.proxy.RoutePropertyUtils;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
+import gateway.service.utils.Routes;
 import java.util.List;
 import java.util.Map;
 
@@ -13,7 +13,7 @@ public class App {
 
   public static void main(String[] args) {
     validateInitArgs();
-    RoutePropertyUtils.refreshRoutes();
+    Routes.refreshRoutes();
   }
 
   private static void validateInitArgs() {
