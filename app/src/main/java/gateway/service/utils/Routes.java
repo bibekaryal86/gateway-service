@@ -81,12 +81,13 @@ public class Routes {
   }
 
   public static String getTargetBaseUrl(String apiName) {
-    for (final String route : ROUTES_MAP.keySet()) {
-      if (apiName.equals(route)) {
-        return ROUTES_MAP.get(route);
-      }
-    }
-    return null;
+    return "http://localhost:8080";
+//    for (final String route : ROUTES_MAP.keySet()) {
+//      if (apiName.equals(route)) {
+//        return ROUTES_MAP.get(route);
+//      }
+//    }
+//    return null;
   }
 
   public static Map<String, String> getRoutesMap() {

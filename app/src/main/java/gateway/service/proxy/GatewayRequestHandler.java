@@ -47,7 +47,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
   protected void channelRead0(
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest)
       throws Exception {
-    final String requestUri = fullHttpRequest.uri();
+    final String requestUri = fullHttpRequest.retain().uri();
 
     // Check if the request is for the base path
     if ("/".equals(requestUri) || "".equals(requestUri)) {
