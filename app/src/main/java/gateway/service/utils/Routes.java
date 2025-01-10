@@ -2,20 +2,18 @@ package gateway.service.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gateway.service.dtos.EnvDetailsResponse;
+import gateway.service.logging.LogLogger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Routes {
-  private static final Logger log = LoggerFactory.getLogger(Routes.class);
+  private static final LogLogger logger = LogLogger.getLogger(Routes.class);
 
   private static Timer timer;
-  private static final long REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes
   private static Map<String, String> ROUTES_MAP = new HashMap<>();
   private static List<String> AUTH_EXCLUSIONS = new ArrayList<>();
 
@@ -26,7 +24,7 @@ public class Routes {
           Common.getSystemEnvProperty(Constants.ENVSVC_PWD));
 
   public static void init() {
-    log.info("Retrieving Env Details...");
+    logger.info("Retrieving Env Details...");
 
     Connector.HttpResponse response =
         Connector.sendRequest(ROUTE_API_URL, "GET", "", null, ROUTE_API_AUTH);
@@ -46,7 +44,7 @@ public class Routes {
                   .findFirst()
                   .orElseThrow()
                   .getListValue();
-          log.info(
+          logger.info(
               "Gateway Service Env Details Auth Exclusions List Size: [{}]",
               AUTH_EXCLUSIONS.size());
 
@@ -65,29 +63,28 @@ public class Routes {
                   .findFirst()
                   .orElseThrow()
                   .getMapValue();
-          log.info("Gateway Service Env Details Routes Map Size: [{}]", ROUTES_MAP.size());
+          logger.info("Gateway Service Env Details Routes Map Size: [{}]", ROUTES_MAP.size());
         } else {
-          log.info(
+          logger.info(
               "Failed to Fetch Gateway Service Env Details, Error Response: [{}]",
               envDetailResponse.getErrMsg());
         }
       } catch (Exception ex) {
-        log.error("Error Retrieving Env Details, Auth Exclusions, Routes Map...", ex);
+        logger.error("Error Retrieving Env Details, Auth Exclusions, Routes Map...", ex);
       }
     } else {
-      log.info(
+      logger.info(
           "Failed to Fetch Gateway Service Env Details, Response: [{}]", response.statusCode());
     }
   }
 
   public static String getTargetBaseUrl(String apiName) {
-    return "http://localhost:8080";
-//    for (final String route : ROUTES_MAP.keySet()) {
-//      if (apiName.equals(route)) {
-//        return ROUTES_MAP.get(route);
-//      }
-//    }
-//    return null;
+    for (final String route : ROUTES_MAP.keySet()) {
+      if (apiName.equals(route)) {
+        return ROUTES_MAP.get(route);
+      }
+    }
+    return null;
   }
 
   public static Map<String, String> getRoutesMap() {
@@ -100,7 +97,7 @@ public class Routes {
 
   // Refresh routes periodically
   public static void refreshRoutes() {
-    log.info("Starting up timer...");
+    logger.info("Starting Routes Timer...");
     timer = new Timer();
     timer.schedule(
         new TimerTask() {
@@ -109,19 +106,17 @@ public class Routes {
             init();
           }
         },
-        0, // Initial delay
-        REFRESH_INTERVAL // Subsequent delay rate
-        );
+        0,
+        Constants.ROUTES_REFRESH_INTERVAL);
 
-    // Add a shutdown hook to gracefully stop the timer
     Runtime.getRuntime()
         .addShutdownHook(
             new Thread(
                 () -> {
-                  log.info("Shutting down timer...");
+                  logger.info("Stopping Routes Timer...");
                   if (timer != null) {
                     timer.cancel();
-                    timer.purge(); // Removes all canceled tasks from the timer's task queue
+                    timer.purge();
                     timer = null;
                   }
                 }));

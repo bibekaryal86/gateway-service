@@ -1,77 +1,107 @@
 package gateway.service.logging;
 
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class LogLogger {
-    private final Logger logger;
+  private final Logger logger;
+  private static final AtomicReference<Level> CURRENT_LOG_LEVEL = new AtomicReference<>(Level.INFO);
 
-    static {
-        configureGlobalLogging();
+  static {
+    configureGlobalLogging(CURRENT_LOG_LEVEL.get());
+  }
+
+  private LogLogger(final Class<?> clazz) {
+    this.logger = Logger.getLogger(clazz.getName());
+  }
+
+  public static LogLogger getLogger(final Class<?> clazz) {
+    return new LogLogger(clazz);
+  }
+
+  public void debug(final String message, final Object... params) {
+    if (isDebugEnabled()) {
+      log(Level.FINE, formatMessage(message, params), null);
+    }
+  }
+
+  public void info(final String message, final Object... params) {
+    if (isInfoEnabled()) {
+      log(Level.INFO, formatMessage(message, params), null);
+    }
+  }
+
+  public void warn(final String message, final Object... params) {
+    if (isWarnEnabled()) {
+      log(Level.WARNING, formatMessage(message, params), null);
+    }
+  }
+
+  public void error(final String message, final Object... params) {
+    // error is always enabled
+    log(Level.SEVERE, formatMessage(message, params), null);
+  }
+
+  public void error(final String message, final Throwable throwable, final Object... params) {
+    // error is always enabled
+    log(Level.SEVERE, formatMessage(message, params), throwable);
+  }
+
+  private void log(final Level level, final String message, final Throwable throwable) {
+    logger.log(level, message);
+    if (throwable != null) {
+      logger.log(level, "Exception: ", throwable);
+    }
+  }
+
+  private String formatMessage(final String message, final Object... params) {
+    if (params == null || params.length == 0) {
+      return message;
     }
 
-    private LogLogger(Class<?> clazz) {
-        this.logger = Logger.getLogger(clazz.getName());
+    final StringBuilder formattedMessage = new StringBuilder(message);
+    for (final Object param : params) {
+      int placeholderIndex = formattedMessage.indexOf("{}");
+      if (placeholderIndex != -1) {
+        formattedMessage.replace(placeholderIndex, placeholderIndex + 2, toString(param));
+      }
+    }
+    return formattedMessage.toString();
+  }
+
+  private String toString(final Object obj) {
+    return obj == null ? "!!null!!" : obj.toString();
+  }
+
+  private static void configureGlobalLogging(final Level level) {
+    CURRENT_LOG_LEVEL.set(level);
+
+    final Logger rootLogger = Logger.getLogger("");
+    rootLogger.setLevel(level);
+
+    for (final Handler handler : rootLogger.getHandlers()) {
+      rootLogger.removeHandler(handler);
     }
 
-    public static LogLogger getLogger(Class<?> clazz) {
-        return new LogLogger(clazz);
-    }
+    final LogHandler asyncLogHandler = new LogHandler();
+    asyncLogHandler.setFormatter(new LogFormatter());
+    asyncLogHandler.setLevel(level);
 
-    public void debug(String message, Object... params) {
-        log(Level.FINE, formatMessage(message, params), null);
-    }
+    rootLogger.addHandler(asyncLogHandler);
+    rootLogger.setUseParentHandlers(false);
+  }
 
-    public void info(String message, Object... params) {
-        log(Level.INFO, formatMessage(message, params), null);
-    }
+  private static boolean isDebugEnabled() {
+    return CURRENT_LOG_LEVEL.get() == Level.FINE;
+  }
 
-    public void warn(String message, Object... params) {
-        log(Level.WARNING, formatMessage(message, params), null);
-    }
+  private static boolean isInfoEnabled() {
+    return isDebugEnabled() || CURRENT_LOG_LEVEL.get() == Level.INFO;
+  }
 
-    public void error(String message, Object... params) {
-        log(Level.SEVERE, formatMessage(message, params), null);
-    }
-
-    public void error(String message, Throwable throwable, Object... params) {
-        log(Level.SEVERE, formatMessage(message, params), throwable);
-    }
-
-    private void log(Level level, String message, Throwable throwable) {
-        logger.log(level, message);
-        if (throwable != null) {
-            logger.log(level, "Exception: ", throwable);
-        }
-    }
-
-    private String formatMessage(String message, Object... params) {
-        if (params == null || params.length == 0) {
-            return message;
-        }
-
-        StringBuilder formattedMessage = new StringBuilder(message);
-        for (Object param : params) {
-            int placeholderIndex = formattedMessage.indexOf("{}");
-            if (placeholderIndex != -1) {
-                formattedMessage.replace(placeholderIndex, placeholderIndex + 2, toString(param));
-            }
-        }
-        return formattedMessage.toString();
-    }
-
-    private String toString(Object obj) {
-        return obj == null ? "!!null!!" : obj.toString();
-    }
-
-    private static void configureGlobalLogging() {
-        Logger rootLogger = Logger.getLogger("");
-        rootLogger.setLevel(Level.ALL);
-        LogHandler asyncLogHandler = new LogHandler();
-        asyncLogHandler.setFormatter(new LogFormatter());
-        asyncLogHandler.setLevel(Level.ALL);
-        rootLogger.addHandler(asyncLogHandler);
-        rootLogger.setUseParentHandlers(false);
-    }
+  private static boolean isWarnEnabled() {
+    return isInfoEnabled() || CURRENT_LOG_LEVEL.get() == Level.WARNING;
+  }
 }
-

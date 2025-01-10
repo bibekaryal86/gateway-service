@@ -1,5 +1,8 @@
 package gateway.service.proxy;
 
+import gateway.service.logging.LogLogger;
+import gateway.service.utils.Common;
+import gateway.service.utils.Constants;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -10,18 +13,16 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NettyServer {
-  private static final Logger log = LoggerFactory.getLogger(NettyServer.class);
+  private static final LogLogger logger = LogLogger.getLogger(NettyServer.class);
 
   public void start() throws Exception {
-    EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-    EventLoopGroup workerGroup = new NioEventLoopGroup(8);
+    final EventLoopGroup bossGroup = new NioEventLoopGroup(Constants.BOSS_GROUP_THREADS);
+    final EventLoopGroup workerGroup = new NioEventLoopGroup(Constants.WORKER_GROUP_THREADS);
 
     try {
-      ServerBootstrap serverBootstrap = new ServerBootstrap();
+      final ServerBootstrap serverBootstrap = new ServerBootstrap();
       serverBootstrap
           .group(bossGroup, workerGroup)
           .channel(NioServerSocketChannel.class)
@@ -33,19 +34,24 @@ public class NettyServer {
                   socketChannel
                       .pipeline()
                       .addLast(new HttpServerCodec())
-                      .addLast(new HttpObjectAggregator(1048576)) // 1MB
+                      .addLast(new HttpObjectAggregator(Constants.MAX_CONTENT_LENGTH))
                       .addLast(new GatewayRequestHandler(workerGroup));
                 }
               });
 
-      ChannelFuture channelFuture = serverBootstrap.bind(8000).sync();
+      final ChannelFuture channelFuture =
+          serverBootstrap
+              .bind(
+                  Integer.parseInt(
+                      Common.getSystemEnvProperty(Constants.ENV_PORT, Constants.ENV_PORT_DEFAULT)))
+              .sync();
 
-      log.info("Gateway Server Started on Port 8000...");
+      logger.info("Gateway Server Started on Port 8000...");
       channelFuture.channel().closeFuture().sync();
     } finally {
       workerGroup.shutdownGracefully();
       bossGroup.shutdownGracefully();
-      log.info("Gateway Server Stopped...");
+      logger.info("Gateway Server Stopped...");
     }
   }
 }

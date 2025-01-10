@@ -3,6 +3,7 @@
  */
 package gateway.service;
 
+import gateway.service.logging.LogLogger;
 import gateway.service.proxy.NettyServer;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
@@ -11,11 +12,14 @@ import java.util.List;
 import java.util.Map;
 
 public class App {
+  private static final LogLogger logger = LogLogger.getLogger(App.class);
 
   public static void main(String[] args) throws Exception {
+    logger.info("Starting Gateway App...");
     validateInitArgs();
     Routes.refreshRoutes();
     new NettyServer().start();
+    logger.info("Started Gateway App...");
   }
 
   private static void validateInitArgs() {

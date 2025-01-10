@@ -1,5 +1,7 @@
 package gateway.service.proxy;
 
+import gateway.service.logging.LogLogger;
+import gateway.service.utils.Constants;
 import gateway.service.utils.Routes;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
@@ -25,15 +27,12 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
-  private static final Logger log = LoggerFactory.getLogger(GatewayRequestHandler.class);
+  private static final LogLogger logger = LogLogger.getLogger(GatewayRequestHandler.class);
 
   private final EventLoopGroup workerGroup;
   private final Map<String, CircuitBreaker> circuitBreakers = new ConcurrentHashMap<>();
@@ -51,7 +50,8 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
 
     // Check if the request is for the base path
     if ("/".equals(requestUri) || "".equals(requestUri)) {
-      sendDefaultResponse(channelHandlerContext);
+      logger.debug("Sending Default Ping Response...");
+      sendDefaultPingResponse(channelHandlerContext);
       return;
     }
 
@@ -59,9 +59,11 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
 
     final CircuitBreaker circuitBreaker =
         circuitBreakers.computeIfAbsent(
-            apiName, key -> new CircuitBreaker(key, 3, Duration.ofSeconds(5)));
+            apiName,
+            key -> new CircuitBreaker(Constants.CB_FAILURE_THRESHOLD, Constants.CB_OPEN_TIMEOUT));
 
     if (!circuitBreaker.allowRequest()) {
+      logger.error("Circuit Breaker Not Allowed: [{}],[{}]", apiName, circuitBreaker);
       sendErrorResponse(channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE);
       return;
     }
@@ -69,9 +71,11 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
     String clientId = extractClientId(channelHandlerContext);
     RateLimiter rateLimiter =
         rateLimiters.computeIfAbsent(
-            clientId, key -> new RateLimiter(10, 1000)); // 10 requests per second
+            clientId,
+            key -> new RateLimiter(Constants.RL_MAX_REQUESTS, Constants.RL_TIME_WINDOW_MILLIS));
 
     if (!rateLimiter.allowRequest()) {
+      logger.error("Rate Limiter Not Allowed: [{}],[{}]", clientId, rateLimiter);
       circuitBreaker.markFailure();
       sendErrorResponse(channelHandlerContext, HttpResponseStatus.TOO_MANY_REQUESTS);
       return;
@@ -79,6 +83,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
 
     final URL transformedUrl = transformRequestUrl(apiName);
     if (transformedUrl == null) {
+      logger.error("NULL Transformed URL: [{}],[{}]", apiName, requestUri);
       circuitBreaker.markFailure();
       sendErrorResponse(channelHandlerContext, HttpResponseStatus.BAD_REQUEST);
       return;
@@ -88,7 +93,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
     bootstrap
         .group(this.workerGroup)
         .channel(NioSocketChannel.class)
-        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000) // 5 seconds connect timeout
+        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Constants.CONNECT_TIMEOUT_MILLIS)
         .handler(
             new ChannelInitializer<SocketChannel>() {
               @Override
@@ -97,7 +102,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
                 socketChannel
                     .pipeline()
                     .addLast(new HttpClientCodec())
-                    .addLast(new HttpObjectAggregator(1048576)) // 1MB, same as in Server
+                    .addLast(new HttpObjectAggregator(Constants.MAX_CONTENT_LENGTH))
                     .addLast(new HttpResponseDecoder())
                     .addLast(new GatewayResponseHandler(channelHandlerContext, circuitBreaker));
               }
@@ -116,19 +121,22 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
                         (ChannelFutureListener)
                             futureResponse -> {
                               if (!futureResponse.isSuccess()) {
-                                log.error(
-                                    "Failed to write request to response handler...",
-                                    futureResponse.cause());
+                                logger.error(
+                                    "Response Handler Error: [{}],[{}]",
+                                    futureResponse.cause(),
+                                    apiName,
+                                    requestUri);
                                 sendErrorResponse(
                                     channelHandlerContext, HttpResponseStatus.BAD_GATEWAY);
                               }
                             });
               } else {
                 if (futureRequest.cause() != null) {
-                  log.error("Connection to API timed out...");
+                  logger.error("Connection Timed Out: [{}],[{}]", apiName, requestUri);
                   sendErrorResponse(channelHandlerContext, HttpResponseStatus.GATEWAY_TIMEOUT);
                 } else {
-                  log.error("Failed to connect to API...", futureRequest.cause());
+                  logger.error(
+                      "Connection Error: [{}],[{}]", futureRequest.cause(), apiName, requestUri);
                   sendErrorResponse(channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE);
                 }
               }
@@ -139,12 +147,13 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
   @Override
   public void exceptionCaught(
       final ChannelHandlerContext channelHandlerContext, final Throwable throwable) {
-    log.error("Exception in Gateway Request Handler...", throwable);
+    logger.error("Exception in Gateway Request Handler...", throwable);
 
     String backendHost = "";
     final CircuitBreaker circuitBreaker =
         circuitBreakers.computeIfAbsent(
-            backendHost, key -> new CircuitBreaker(key, 3, Duration.ofSeconds(5)));
+            backendHost,
+            key -> new CircuitBreaker(Constants.CB_FAILURE_THRESHOLD, Constants.CB_OPEN_TIMEOUT));
     circuitBreaker.markFailure();
 
     sendErrorResponse(channelHandlerContext, HttpResponseStatus.INTERNAL_SERVER_ERROR);
@@ -189,10 +198,10 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
   private int extractPort(final URL url) {
     int port = url.getPort();
     if (port == -1) {
-      if (url.getProtocol().equals("https")) {
-        port = 443;
+      if (url.getProtocol().equals(Constants.HTTPS_PROTOCOL)) {
+        port = Constants.HTTPS_DEFAULT_PORT;
       } else {
-        port = 80;
+        port = Constants.HTTP_DEFAULT_PORT;
       }
     }
     return port;
@@ -201,19 +210,19 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
   private void sendErrorResponse(
       final ChannelHandlerContext channelHandlerContext, final HttpResponseStatus status) {
     FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
-    response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
+    response.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
     channelHandlerContext.writeAndFlush(response);
     channelHandlerContext.close();
   }
 
-  private void sendDefaultResponse(final ChannelHandlerContext channelHandlerContext) {
+  private void sendDefaultPingResponse(final ChannelHandlerContext channelHandlerContext) {
     String jsonResponse = "{\"ping\": \"successful\"}";
     FullHttpResponse response =
         new DefaultFullHttpResponse(
             HttpVersion.HTTP_1_1,
             HttpResponseStatus.OK,
             Unpooled.wrappedBuffer(jsonResponse.getBytes()));
-    response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
+    response.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
     response.headers().set(HttpHeaderNames.CONTENT_LENGTH, jsonResponse.length());
     channelHandlerContext.writeAndFlush(response);
     channelHandlerContext.close();

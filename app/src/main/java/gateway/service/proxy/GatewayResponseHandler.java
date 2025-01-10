@@ -1,13 +1,12 @@
 package gateway.service.proxy;
 
+import gateway.service.logging.LogLogger;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GatewayResponseHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
-  private static final Logger log = LoggerFactory.getLogger(GatewayResponseHandler.class);
+  private static final LogLogger logger = LogLogger.getLogger(GatewayResponseHandler.class);
   private final ChannelHandlerContext channelHandlerContextClient;
   private final CircuitBreaker circuitBreaker;
 
@@ -23,14 +22,14 @@ public class GatewayResponseHandler extends SimpleChannelInboundHandler<FullHttp
       final ChannelHandlerContext channelHandlerContext /* unused */,
       final FullHttpResponse fullHttpResponse)
       throws Exception {
-    log.debug("Received response from backend: {}", fullHttpResponse.status());
+    logger.debug("Received response from backend: {}", fullHttpResponse.status());
     channelHandlerContextClient.writeAndFlush(fullHttpResponse.retain());
   }
 
   @Override
   public void exceptionCaught(
       final ChannelHandlerContext channelHandlerContext, final Throwable throwable) {
-    log.error("Exception in Gateway Response Handler...", throwable);
+    logger.error("Exception in Gateway Response Handler...", throwable);
     circuitBreaker.markFailure();
     channelHandlerContext.close();
     channelHandlerContextClient.close();
