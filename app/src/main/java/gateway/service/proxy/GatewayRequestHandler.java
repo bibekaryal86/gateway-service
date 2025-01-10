@@ -151,7 +151,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
   }
 
   private String extractApiName(final String requestUri) {
-      if (requestUri.startsWith("/")) {
+    if (requestUri.startsWith("/")) {
       return requestUri.substring(1);
     }
     return requestUri;
@@ -200,10 +200,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
 
   private void sendErrorResponse(
       final ChannelHandlerContext channelHandlerContext, final HttpResponseStatus status) {
-    FullHttpResponse response = new DefaultFullHttpResponse(
-            HttpVersion.HTTP_1_1,
-            status
-    );
+    FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
     response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
     channelHandlerContext.writeAndFlush(response);
     channelHandlerContext.close();
@@ -211,11 +208,11 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
 
   private void sendDefaultResponse(final ChannelHandlerContext channelHandlerContext) {
     String jsonResponse = "{\"ping\": \"successful\"}";
-    FullHttpResponse response = new DefaultFullHttpResponse(
+    FullHttpResponse response =
+        new DefaultFullHttpResponse(
             HttpVersion.HTTP_1_1,
             HttpResponseStatus.OK,
-            Unpooled.wrappedBuffer(jsonResponse.getBytes())
-    );
+            Unpooled.wrappedBuffer(jsonResponse.getBytes()));
     response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
     response.headers().set(HttpHeaderNames.CONTENT_LENGTH, jsonResponse.length());
     channelHandlerContext.writeAndFlush(response);
