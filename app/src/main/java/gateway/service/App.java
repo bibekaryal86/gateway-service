@@ -3,6 +3,7 @@
  */
 package gateway.service;
 
+import gateway.service.proxy.NettyServer;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Routes;
@@ -11,9 +12,10 @@ import java.util.Map;
 
 public class App {
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     validateInitArgs();
     Routes.refreshRoutes();
+    new NettyServer().start();
   }
 
   private static void validateInitArgs() {

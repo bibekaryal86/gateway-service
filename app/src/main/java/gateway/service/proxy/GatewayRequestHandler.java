@@ -2,6 +2,7 @@ package gateway.service.proxy;
 
 import gateway.service.utils.Routes;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,7 +14,9 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponseDecoder;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -44,7 +47,15 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
   protected void channelRead0(
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest)
       throws Exception {
-    final String apiName = extractApiName(fullHttpRequest);
+    final String requestUri = fullHttpRequest.uri();
+
+    // Check if the request is for the base path
+    if ("/".equals(requestUri) || "".equals(requestUri)) {
+      sendDefaultResponse(channelHandlerContext);
+      return;
+    }
+
+    final String apiName = extractApiName(requestUri);
 
     final CircuitBreaker circuitBreaker =
         circuitBreakers.computeIfAbsent(
@@ -137,15 +148,13 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
     circuitBreaker.markFailure();
 
     sendErrorResponse(channelHandlerContext, HttpResponseStatus.INTERNAL_SERVER_ERROR);
-    channelHandlerContext.close();
   }
 
-  private String extractApiName(final FullHttpRequest fullHttpRequest) {
-    String requestPath = fullHttpRequest.uri();
-    if (requestPath.startsWith("/")) {
-      return requestPath.substring(1);
+  private String extractApiName(final String requestUri) {
+      if (requestUri.startsWith("/")) {
+      return requestUri.substring(1);
     }
-    return requestPath;
+    return requestUri;
   }
 
   private String extractClientId(final ChannelHandlerContext channelHandlerContext) {
@@ -191,6 +200,25 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
 
   private void sendErrorResponse(
       final ChannelHandlerContext channelHandlerContext, final HttpResponseStatus status) {
-    channelHandlerContext.writeAndFlush(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status));
+    FullHttpResponse response = new DefaultFullHttpResponse(
+            HttpVersion.HTTP_1_1,
+            status
+    );
+    response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
+    channelHandlerContext.writeAndFlush(response);
+    channelHandlerContext.close();
+  }
+
+  private void sendDefaultResponse(final ChannelHandlerContext channelHandlerContext) {
+    String jsonResponse = "{\"ping\": \"successful\"}";
+    FullHttpResponse response = new DefaultFullHttpResponse(
+            HttpVersion.HTTP_1_1,
+            HttpResponseStatus.OK,
+            Unpooled.wrappedBuffer(jsonResponse.getBytes())
+    );
+    response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
+    response.headers().set(HttpHeaderNames.CONTENT_LENGTH, jsonResponse.length());
+    channelHandlerContext.writeAndFlush(response);
+    channelHandlerContext.close();
   }
 }
