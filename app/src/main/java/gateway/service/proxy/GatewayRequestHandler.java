@@ -1,5 +1,6 @@
 package gateway.service.proxy;
 
+import gateway.service.utils.Routes;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -17,6 +18,10 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponseDecoder;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,111 +44,153 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
   protected void channelRead0(
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest)
       throws Exception {
-    final String backendHost = "";
-    final int backendPort = -1;
+    final String apiName = extractApiName(fullHttpRequest);
 
     final CircuitBreaker circuitBreaker =
         circuitBreakers.computeIfAbsent(
+            apiName, key -> new CircuitBreaker(key, 3, Duration.ofSeconds(5)));
+
+    if (!circuitBreaker.allowRequest()) {
+      sendErrorResponse(channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE);
+      return;
+    }
+
+    String clientId = extractClientId(channelHandlerContext);
+    RateLimiter rateLimiter =
+        rateLimiters.computeIfAbsent(
+            clientId, key -> new RateLimiter(10, 1000)); // 10 requests per second
+
+    if (!rateLimiter.allowRequest()) {
+      circuitBreaker.markFailure();
+      sendErrorResponse(channelHandlerContext, HttpResponseStatus.TOO_MANY_REQUESTS);
+      return;
+    }
+
+    final URL transformedUrl = transformRequestUrl(apiName);
+    if (transformedUrl == null) {
+      circuitBreaker.markFailure();
+      sendErrorResponse(channelHandlerContext, HttpResponseStatus.BAD_REQUEST);
+      return;
+    }
+
+    final Bootstrap bootstrap = new Bootstrap();
+    bootstrap
+        .group(this.workerGroup)
+        .channel(NioSocketChannel.class)
+        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000) // 5 seconds connect timeout
+        .handler(
+            new ChannelInitializer<SocketChannel>() {
+              @Override
+              protected void initChannel(@NotNull final SocketChannel socketChannel)
+                  throws Exception {
+                socketChannel
+                    .pipeline()
+                    .addLast(new HttpClientCodec())
+                    .addLast(new HttpObjectAggregator(1048576)) // 1MB, same as in Server
+                    .addLast(new HttpResponseDecoder())
+                    .addLast(new GatewayResponseHandler(channelHandlerContext, circuitBreaker));
+              }
+            });
+
+    final ChannelFuture channelFuture =
+        bootstrap.connect(extractHost(transformedUrl), extractPort(transformedUrl));
+    channelFuture.addListener(
+        (ChannelFutureListener)
+            futureRequest -> {
+              if (futureRequest.isSuccess()) {
+                futureRequest
+                    .channel()
+                    .writeAndFlush(fullHttpRequest.retain())
+                    .addListener(
+                        (ChannelFutureListener)
+                            futureResponse -> {
+                              if (!futureResponse.isSuccess()) {
+                                log.error(
+                                    "Failed to write request to response handler...",
+                                    futureResponse.cause());
+                                sendErrorResponse(
+                                    channelHandlerContext, HttpResponseStatus.BAD_GATEWAY);
+                              }
+                            });
+              } else {
+                if (futureRequest.cause() != null) {
+                  log.error("Connection to API timed out...");
+                  sendErrorResponse(channelHandlerContext, HttpResponseStatus.GATEWAY_TIMEOUT);
+                } else {
+                  log.error("Failed to connect to API...", futureRequest.cause());
+                  sendErrorResponse(channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE);
+                }
+              }
+            });
+    circuitBreaker.markSuccess();
+  }
+
+  @Override
+  public void exceptionCaught(
+      final ChannelHandlerContext channelHandlerContext, final Throwable throwable) {
+    log.error("Exception in Gateway Request Handler...", throwable);
+
+    String backendHost = "";
+    final CircuitBreaker circuitBreaker =
+        circuitBreakers.computeIfAbsent(
             backendHost, key -> new CircuitBreaker(key, 3, Duration.ofSeconds(5)));
+    circuitBreaker.markFailure();
 
-    if (circuitBreaker.allowRequest()) {
-      String clientId = extractClientId(channelHandlerContext);
-      RateLimiter rateLimiter =
-          rateLimiters.computeIfAbsent(
-                  clientId, key -> new RateLimiter(10, 1000)); // 10 requests per second
+    sendErrorResponse(channelHandlerContext, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    channelHandlerContext.close();
+  }
 
-      if (rateLimiter.allowRequest()) {
-        final Bootstrap bootstrap = new Bootstrap();
-        bootstrap
-            .group(this.workerGroup)
-            .channel(NioSocketChannel.class)
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000) // 5 seconds connect timeout
-            .handler(
-                new ChannelInitializer<SocketChannel>() {
-                  @Override
-                  protected void initChannel(@NotNull final SocketChannel socketChannel)
-                      throws Exception {
-                    socketChannel
-                        .pipeline()
-                        .addLast(new HttpClientCodec())
-                        .addLast(new HttpObjectAggregator(1048576)) // 1MB, same as in Server
-                        .addLast(new HttpResponseDecoder())
-                        .addLast(new GatewayResponseHandler(channelHandlerContext, circuitBreaker));
-                  }
-                });
+  private String extractApiName(final FullHttpRequest fullHttpRequest) {
+    String requestPath = fullHttpRequest.uri();
+    if (requestPath.startsWith("/")) {
+      return requestPath.substring(1);
+    }
+    return requestPath;
+  }
 
-        final ChannelFuture channelFuture = bootstrap.connect(backendHost, backendPort);
-        channelFuture.addListener(
-            (ChannelFutureListener)
-                futureRequest -> {
-                  if (futureRequest.isSuccess()) {
-                    futureRequest
-                        .channel()
-                        .writeAndFlush(fullHttpRequest.retain())
-                        .addListener(
-                            (ChannelFutureListener)
-                                futureResponse -> {
-                                  if (!futureResponse.isSuccess()) {
-                                    log.error(
-                                        "Failed to write request to response handler...",
-                                        futureResponse.cause());
-                                    channelHandlerContext.writeAndFlush(
-                                        new DefaultFullHttpResponse(
-                                            HttpVersion.HTTP_1_1,
-                                            HttpResponseStatus.INTERNAL_SERVER_ERROR));
-                                  }
-                                });
-                  } else {
-                    if (futureRequest.cause() != null) {
-                      log.error("Connection to API timed out...");
-                      channelHandlerContext.writeAndFlush(
-                          new DefaultFullHttpResponse(
-                              HttpVersion.HTTP_1_1, HttpResponseStatus.GATEWAY_TIMEOUT));
-                    } else {
-                      log.error("Failed to connect to API...", futureRequest.cause());
-                      channelHandlerContext.writeAndFlush(
-                          new DefaultFullHttpResponse(
-                              HttpVersion.HTTP_1_1, HttpResponseStatus.SERVICE_UNAVAILABLE));
-                    }
-                  }
-                });
-        circuitBreaker.markSuccess();
-      } else {
-        circuitBreaker.markFailure();
-        channelHandlerContext.writeAndFlush(
-            new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1, HttpResponseStatus.TOO_MANY_REQUESTS));
-      }
-    } else {
-      channelHandlerContext.writeAndFlush(
-          new DefaultFullHttpResponse(
-              HttpVersion.HTTP_1_1, HttpResponseStatus.SERVICE_UNAVAILABLE));
+  private String extractClientId(final ChannelHandlerContext channelHandlerContext) {
+    String remoteAddress = channelHandlerContext.channel().remoteAddress().toString();
+
+    if (remoteAddress.contains("/")) {
+      remoteAddress = remoteAddress.substring(remoteAddress.indexOf("/") + 1);
+    }
+    if (remoteAddress.contains(":")) {
+      remoteAddress = remoteAddress.substring(0, remoteAddress.indexOf(":"));
+    }
+
+    return remoteAddress;
+  }
+
+  private URL transformRequestUrl(final String apiName) {
+    final String baseUrl = Routes.getTargetBaseUrl(apiName);
+    if (baseUrl == null) {
+      return null;
+    }
+    try {
+      return new URI(baseUrl).toURL();
+    } catch (MalformedURLException | URISyntaxException e) {
+      return null;
     }
   }
 
-    private String extractClientId(final ChannelHandlerContext ctx) {
-        String remoteAddress = ctx.channel().remoteAddress().toString();
+  private String extractHost(final URL url) {
+    return url.getHost();
+  }
 
-        if (remoteAddress.contains("/")) {
-            remoteAddress = remoteAddress.substring(remoteAddress.indexOf("/") + 1);
-        }
-        if (remoteAddress.contains(":")) {
-            remoteAddress = remoteAddress.substring(0, remoteAddress.indexOf(":"));
-        }
-
-        return remoteAddress;
+  private int extractPort(final URL url) {
+    int port = url.getPort();
+    if (port == -1) {
+      if (url.getProtocol().equals("https")) {
+        port = 443;
+      } else {
+        port = 80;
+      }
     }
+    return port;
+  }
 
-    @Override
-    public void exceptionCaught(final ChannelHandlerContext channelHandlerContext, final Throwable throwable) {
-        log.error("Exception in Gateway Request Handler...", throwable);
-
-        String backendHost = "";
-        final CircuitBreaker circuitBreaker =
-                circuitBreakers.computeIfAbsent(
-                        backendHost, key -> new CircuitBreaker(key, 3, Duration.ofSeconds(5)));
-        circuitBreaker.markFailure();
-
-        channelHandlerContext.close();
-    }
+  private void sendErrorResponse(
+      final ChannelHandlerContext channelHandlerContext, final HttpResponseStatus status) {
+    channelHandlerContext.writeAndFlush(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status));
+  }
 }

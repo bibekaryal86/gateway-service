@@ -80,17 +80,12 @@ public class Routes {
     }
   }
 
-  public static String getTargetBaseUrl(String requestPath) {
-    if (requestPath.startsWith("/")) {
-      requestPath = requestPath.substring(1);
-    }
-
+  public static String getTargetBaseUrl(String apiName) {
     for (final String route : ROUTES_MAP.keySet()) {
-      if (requestPath.startsWith(route)) {
+      if (apiName.equals(route)) {
         return ROUTES_MAP.get(route);
       }
     }
-
     return null;
   }
 
