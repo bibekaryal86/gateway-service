@@ -10,17 +10,26 @@ public class GatewayRequestDetails implements Serializable {
   private final String requestUri;
   private final String apiName;
   private final String clientId;
+  private final String targetBaseUrl;
+  private final String targetHost;
+  private final Integer targetPort;
 
   public GatewayRequestDetails(
       final HttpMethod requestMethod,
       final String apiName,
       final String requestUri,
-      final String clientId) {
+      final String clientId,
+      final String targetBaseUrl,
+      final String targetHost,
+      final Integer targetPort) {
     this.requestId = UUID.randomUUID();
     this.requestMethod = requestMethod;
     this.apiName = apiName;
     this.requestUri = requestUri;
     this.clientId = clientId;
+    this.targetBaseUrl = targetBaseUrl;
+    this.targetHost = targetHost;
+    this.targetPort = targetPort;
   }
 
   public UUID getRequestId() {
@@ -43,22 +52,29 @@ public class GatewayRequestDetails implements Serializable {
     return clientId;
   }
 
+  public String getTargetBaseUrl() {
+    return targetBaseUrl;
+  }
+
+  public String getTargetHost() {
+    return targetHost;
+  }
+
+  public Integer getTargetPort() {
+    return targetPort;
+  }
+
   @Override
   public String toString() {
-    return "GatewayRequestDetails{"
-        + "requestId="
-        + requestId
-        + ", requestMethod="
-        + requestMethod
-        + ", requestUri='"
-        + requestUri
-        + '\''
-        + ", apiName='"
-        + apiName
-        + '\''
-        + ", clientId='"
-        + clientId
-        + '\''
-        + '}';
+    return "GatewayRequestDetails{" +
+            "requestId=" + requestId +
+            ", requestMethod=" + requestMethod +
+            ", requestUri='" + requestUri + '\'' +
+            ", apiName='" + apiName + '\'' +
+            ", clientId='" + clientId + '\'' +
+            ", targetBaseUrl='" + targetBaseUrl + '\'' +
+            ", targetHost='" + targetHost + '\'' +
+            ", targetPort=" + targetPort +
+            '}';
   }
 }
