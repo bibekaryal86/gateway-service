@@ -6,10 +6,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
 
-public class LogHandler extends StreamHandler {
+public class LogHandler extends Handler {
   private final ConcurrentLinkedQueue<LogRecord> logQueue = new ConcurrentLinkedQueue<>();
   private final ExecutorService executorService;
   private final AtomicBoolean isProcessing = new AtomicBoolean(false);
@@ -38,7 +39,6 @@ public class LogHandler extends StreamHandler {
   @Override
   public void close() throws SecurityException {
     try {
-      super.close();
       flushRemainingLogs();
       executorService.shutdown();
       if (!executorService.awaitTermination(2, TimeUnit.SECONDS)) {
