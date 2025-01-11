@@ -1,5 +1,6 @@
 package gateway.service.proxy;
 
+import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.logging.LogLogger;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -23,10 +24,8 @@ public class GatewayResponseHandler extends SimpleChannelInboundHandler<FullHttp
       final ChannelHandlerContext channelHandlerContext /* unused */,
       final FullHttpResponse fullHttpResponse)
       throws Exception {
-    final String requestId =
-        (String) channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_ID")).get();
-    logger.info("Gateway Response: ID=[{}], Status=[{}]", requestId, fullHttpResponse.status());
-
+    final GatewayRequestDetails gatewayRequestDetails = (GatewayRequestDetails) channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_DETAILS")).get();
+    logger.info("Gateway Response: [{}],[{}]", gatewayRequestDetails, fullHttpResponse.retain().status());
     channelHandlerContextClient.writeAndFlush(fullHttpResponse.retain());
   }
 

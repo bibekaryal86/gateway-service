@@ -1,5 +1,6 @@
 package gateway.service.proxy;
 
+import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.logging.LogLogger;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Routes;
@@ -27,6 +28,7 @@ import java.net.URL;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.jetbrains.annotations.NotNull;
 
 public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
@@ -48,9 +50,12 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
     final HttpMethod requestMethod = fullHttpRequest.retain().method();
     final String apiName = extractApiName(requestUri);
     final UUID requestUuid = UUID.randomUUID();
-    channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_ID")).set(requestUuid);
-    logger.info(
-        "[{}] Gateway Request: URI=[{}], Method=[{}]", requestUuid, requestUri, requestMethod);
+
+    final GatewayRequestDetails gatewayRequestDetails = new GatewayRequestDetails(requestUuid, requestMethod.toString(), requestUri);
+
+    // Store request details in Channel attributes
+    channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_DETAILS")).set(gatewayRequestDetails);
+    logger.info("Gateway Request: [{}]", gatewayRequestDetails);
 
     final boolean isGatewaySvcResponse =
         new GatewayHelper().gatewaySvcResponse(apiName, channelHandlerContext, fullHttpRequest);
@@ -189,10 +194,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
 
   private URL transformRequestUrl(final String apiName) {
     final String baseUrl = Routes.getTargetBaseUrl(apiName);
-    if (baseUrl == null) {
-      return null;
-    }
-    try {
+      try {
       return new URI(baseUrl).toURL();
     } catch (MalformedURLException | URISyntaxException e) {
       return null;
