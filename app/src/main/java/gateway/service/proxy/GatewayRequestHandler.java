@@ -26,9 +26,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.jetbrains.annotations.NotNull;
 
 public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
@@ -46,19 +44,24 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
   protected void channelRead0(
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest)
       throws Exception {
+    // TODO just use GatewayRequestDetails everywhere
     final String requestUri = fullHttpRequest.retain().uri();
     final HttpMethod requestMethod = fullHttpRequest.retain().method();
     final String apiName = extractApiName(requestUri);
-    final UUID requestUuid = UUID.randomUUID();
-
-    final GatewayRequestDetails gatewayRequestDetails = new GatewayRequestDetails(requestUuid, requestMethod.toString(), requestUri);
+    final String clientId = extractClientId(channelHandlerContext);
+    final GatewayRequestDetails gatewayRequestDetails =
+        new GatewayRequestDetails(requestMethod, apiName, requestUri, clientId);
 
     // Store request details in Channel attributes
-    channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_DETAILS")).set(gatewayRequestDetails);
+    channelHandlerContext
+        .channel()
+        .attr(AttributeKey.valueOf("REQUEST_DETAILS"))
+        .set(gatewayRequestDetails);
     logger.info("Gateway Request: [{}]", gatewayRequestDetails);
 
     final boolean isGatewaySvcResponse =
-        new GatewayHelper().gatewaySvcResponse(apiName, channelHandlerContext, fullHttpRequest);
+        GatewayHelper.gatewaySvcResponse(
+            gatewayRequestDetails, channelHandlerContext, fullHttpRequest);
     if (isGatewaySvcResponse) {
       return;
     }
@@ -68,22 +71,28 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
             apiName,
             key -> new CircuitBreaker(Constants.CB_FAILURE_THRESHOLD, Constants.CB_OPEN_TIMEOUT));
     final boolean isCircuitBreakerResponse =
-        new GatewayHelper().circuitBreakerResponse(apiName, channelHandlerContext, circuitBreaker);
+        GatewayHelper.circuitBreakerResponse(channelHandlerContext, circuitBreaker);
 
     if (isCircuitBreakerResponse) {
+      logger.error("CircuitBreaker Response: [{}], [{}]", gatewayRequestDetails, circuitBreaker);
       return;
     }
 
+    RateLimiter rateLimiter =
+        rateLimiters.computeIfAbsent(
+            clientId,
+            key -> new RateLimiter(Constants.RL_MAX_REQUESTS, Constants.RL_TIME_WINDOW_MILLIS));
     final boolean isRateLimiterResponse =
-        new GatewayHelper().rateLimiterResponse(apiName, channelHandlerContext, rateLimiters);
+        GatewayHelper.rateLimiterResponse(channelHandlerContext, rateLimiter);
     if (isRateLimiterResponse) {
+      logger.error("RateLimiter Response: [{}], [{}]", gatewayRequestDetails, rateLimiter);
       return;
     }
 
     final URL transformedUrl = transformRequestUrl(apiName);
     if (transformedUrl == null) {
-      logger.error("NULL Transformed URL: [{}],[{}]", apiName, requestUri);
-      new GatewayHelper().sendErrorResponse(channelHandlerContext, HttpResponseStatus.BAD_REQUEST);
+      logger.error("Transform URL Error: [{}]", gatewayRequestDetails);
+      GatewayHelper.sendErrorResponse(channelHandlerContext, HttpResponseStatus.BAD_REQUEST);
       return;
     }
 
@@ -102,7 +111,9 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
                     .addLast(new HttpClientCodec())
                     .addLast(new HttpObjectAggregator(Constants.MAX_CONTENT_LENGTH))
                     .addLast(new HttpResponseDecoder())
-                    .addLast(new GatewayResponseHandler(channelHandlerContext, gatewayRequestDetails, circuitBreaker));
+                    .addLast(
+                        new GatewayResponseHandler(
+                            channelHandlerContext, gatewayRequestDetails, circuitBreaker));
               }
             });
 
@@ -119,39 +130,23 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
                         (ChannelFutureListener)
                             futureResponse -> {
                               if (!futureResponse.isSuccess()) {
-                                final String requestId =
-                                    (String)
-                                        channelHandlerContext
-                                            .channel()
-                                            .attr(AttributeKey.valueOf("REQUEST_ID"))
-                                            .get();
                                 logger.error(
-                                    "Gateway Response Handler Error: [{}].[{}],[{}]",
+                                    "Gateway Response Handler Error: [{}]",
                                     futureResponse.cause(),
-                                    requestId,
-                                    apiName,
-                                    requestUri);
-                                new GatewayHelper()
-                                    .sendErrorResponse(
-                                        channelHandlerContext, HttpResponseStatus.BAD_GATEWAY);
+                                    gatewayRequestDetails);
+                                GatewayHelper.sendErrorResponse(
+                                    channelHandlerContext, HttpResponseStatus.BAD_GATEWAY);
                               }
                             });
               } else {
-                final String requestId =
-                    (String)
-                        channelHandlerContext
-                            .channel()
-                            .attr(AttributeKey.valueOf("REQUEST_ID"))
-                            .get();
-                logger.error("Gateway Response: ID=[{}], Status=[{}]", requestId, requestUri);
+                logger.error("Gateway Response Handler Failure: [{}]", gatewayRequestDetails);
 
                 if (futureRequest.cause() != null) {
-                  new GatewayHelper()
-                      .sendErrorResponse(channelHandlerContext, HttpResponseStatus.GATEWAY_TIMEOUT);
+                  GatewayHelper.sendErrorResponse(
+                      channelHandlerContext, HttpResponseStatus.GATEWAY_TIMEOUT);
                 } else {
-                  new GatewayHelper()
-                      .sendErrorResponse(
-                          channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE);
+                  GatewayHelper.sendErrorResponse(
+                      channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE);
                 }
               }
             });
@@ -161,9 +156,11 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
   @Override
   public void exceptionCaught(
       final ChannelHandlerContext channelHandlerContext, final Throwable throwable) {
-    final String requestId =
-        (String) channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_ID")).get();
-    logger.error("Gateway Response: ID=[{}]", throwable, requestId);
+    final GatewayRequestDetails gatewayRequestDetails =
+        (GatewayRequestDetails)
+            channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_DETAILS")).get();
+    logger.error(
+        "Gateway Request Handler Exception Caught: [{}]", throwable, gatewayRequestDetails);
 
     String backendHost = "";
     final CircuitBreaker circuitBreaker =
@@ -172,8 +169,21 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
             key -> new CircuitBreaker(Constants.CB_FAILURE_THRESHOLD, Constants.CB_OPEN_TIMEOUT));
     circuitBreaker.markFailure();
 
-    new GatewayHelper()
-        .sendErrorResponse(channelHandlerContext, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    GatewayHelper.sendErrorResponse(
+        channelHandlerContext, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+  }
+
+  private String extractClientId(final ChannelHandlerContext channelHandlerContext) {
+    String remoteAddress = channelHandlerContext.channel().remoteAddress().toString();
+
+    if (remoteAddress.contains("/")) {
+      remoteAddress = remoteAddress.substring(remoteAddress.indexOf("/") + 1);
+    }
+    if (remoteAddress.contains(":")) {
+      remoteAddress = remoteAddress.substring(0, remoteAddress.indexOf(":"));
+    }
+
+    return remoteAddress;
   }
 
   private String extractApiName(String requestUri) {
@@ -194,7 +204,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
 
   private URL transformRequestUrl(final String apiName) {
     final String baseUrl = Routes.getTargetBaseUrl(apiName);
-      try {
+    try {
       return new URI(baseUrl).toURL();
     } catch (MalformedURLException | URISyntaxException e) {
       return null;

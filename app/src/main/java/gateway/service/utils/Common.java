@@ -7,9 +7,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
 
 public class Common {
 
+  private static final ObjectMapper OBJECT_MAPPER;
   private static final Map<String, String> propertiesMap;
 
   static {
@@ -32,6 +34,11 @@ public class Common {
         });
 
     propertiesMap = Collections.unmodifiableMap(tempMap);
+  }
+
+  static {
+    OBJECT_MAPPER = new ObjectMapper();
+    OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
   public static String getSystemEnvProperty(final String key, final String defaultValue) {
@@ -64,8 +71,22 @@ public class Common {
   }
 
   public static ObjectMapper objectMapperProvider() {
-    final ObjectMapper objectMapper = new ObjectMapper();
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    return objectMapper;
+    return OBJECT_MAPPER;
+  }
+
+  public static Level transformLogLevel(final String logLevel) {
+    // Mirrors LogFormatter.transformLogLevel
+    switch (logLevel) {
+      case "DEBUG" -> {
+        return Level.FINE;
+      }
+      case "WARN" -> {
+        return Level.WARNING;
+      }
+      case "ERROR" -> {
+        return Level.SEVERE;
+      }
+    }
+    return Level.INFO;
   }
 }

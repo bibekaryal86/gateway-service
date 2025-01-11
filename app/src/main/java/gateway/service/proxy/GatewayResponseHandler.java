@@ -14,9 +14,9 @@ public class GatewayResponseHandler extends SimpleChannelInboundHandler<FullHttp
   private final CircuitBreaker circuitBreaker;
 
   public GatewayResponseHandler(
-          final ChannelHandlerContext channelHandlerContextClient,
-          final GatewayRequestDetails gatewayRequestDetails,
-          final CircuitBreaker circuitBreaker) {
+      final ChannelHandlerContext channelHandlerContextClient,
+      final GatewayRequestDetails gatewayRequestDetails,
+      final CircuitBreaker circuitBreaker) {
     this.channelHandlerContextClient = channelHandlerContextClient;
     this.gatewayRequestDetails = gatewayRequestDetails;
     this.circuitBreaker = circuitBreaker;
@@ -27,7 +27,10 @@ public class GatewayResponseHandler extends SimpleChannelInboundHandler<FullHttp
       final ChannelHandlerContext channelHandlerContext /* unused */,
       final FullHttpResponse fullHttpResponse)
       throws Exception {
-    logger.info("Gateway Response: [{}],[{}]", this.gatewayRequestDetails, fullHttpResponse.retain().status());
+    logger.info(
+        "Gateway Response: [{}],[{}]",
+        this.gatewayRequestDetails,
+        fullHttpResponse.retain().status());
     channelHandlerContextClient.writeAndFlush(fullHttpResponse.retain());
   }
 

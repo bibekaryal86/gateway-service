@@ -31,7 +31,7 @@ public class LogFormatter extends Formatter {
   public String format(final LogRecord logRecord) {
     String timestamp = dateFormat.format(new Date(logRecord.getMillis()));
     String threadName = Thread.currentThread().getName();
-    String level = transformLevel(logRecord.getLevel());
+    String level = transformLogLevel(logRecord.getLevel());
     String loggerName = getShortLoggerName(logRecord.getLoggerName());
     String message = formatMessage(logRecord);
 
@@ -47,7 +47,7 @@ public class LogFormatter extends Formatter {
     return loggerName.substring(loggerName.lastIndexOf('.') + 1);
   }
 
-  private String transformLevel(final Level level) {
+  private String transformLogLevel(final Level level) {
     if (level == Level.FINE) {
       return "DEBUG";
     }

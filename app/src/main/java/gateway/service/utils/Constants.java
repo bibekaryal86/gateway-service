@@ -50,4 +50,9 @@ public class Constants {
   // RATE LIMITER (10 requests per second)
   public static final int RL_MAX_REQUESTS = 10;
   public static final int RL_TIME_WINDOW_MILLIS = 1;
+
+  // GATEWAY SERVICE ENDPOINTS
+  public static final String TESTS_PING = "/tests/ping";
+  public static final String TESTS_RESET = "/tests/reset";
+  public static final String TESTS_LOGS = "/tests/logs";
 }
