@@ -26,16 +26,18 @@ public class GatewayService {
   public boolean handleGatewayServiceRequests(
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest) {
     String requestUri = fullHttpRequest.retain().uri();
-    requestUri = requestUri.replace("/" + Constants.THIS_APP_NAME + "/", "");
+    requestUri = requestUri.startsWith("/") ? requestUri.substring(1) : requestUri;
+    if (requestUri.startsWith(Constants.THIS_APP_NAME)) {
+      requestUri = requestUri.replace(Constants.THIS_APP_NAME + "/", "");
 
-    if (Common.isEmpty(requestUri) || requestUri.startsWith(TESTS_PING)) {
-      return handleTestsPing(channelHandlerContext, fullHttpRequest);
-    } else if (requestUri.startsWith(TESTS_RESET)) {
-      return handleTestsReset(channelHandlerContext, fullHttpRequest);
-    } else if (requestUri.startsWith(TESTS_LOGS)) {
-      return handleTestsLogs(channelHandlerContext, fullHttpRequest);
+      if (Common.isEmpty(requestUri) || requestUri.startsWith(TESTS_PING)) {
+        return handleTestsPing(channelHandlerContext, fullHttpRequest);
+      } else if (requestUri.startsWith(TESTS_RESET)) {
+        return handleTestsReset(channelHandlerContext, fullHttpRequest);
+      } else if (requestUri.startsWith(TESTS_LOGS)) {
+        return handleTestsLogs(channelHandlerContext, fullHttpRequest);
+      }
     }
-
     return false;
   }
 
@@ -54,7 +56,7 @@ public class GatewayService {
     return true;
   }
 
-  public boolean handleTestsReset(
+  private boolean handleTestsReset(
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest) {
     Routes.refreshRoutes();
 
@@ -71,7 +73,7 @@ public class GatewayService {
     return true;
   }
 
-  public boolean handleTestsLogs(
+  private boolean handleTestsLogs(
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest) {
     final QueryStringDecoder queryStringDecoder = new QueryStringDecoder(fullHttpRequest.uri());
     final Map<String, List<String>> parameters = queryStringDecoder.parameters();

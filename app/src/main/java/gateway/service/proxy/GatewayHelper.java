@@ -13,7 +13,6 @@ import java.util.Map;
 
 public class GatewayHelper {
 
-  // TODO handle gatewaysvc
   public boolean gatewaySvcResponse(
       final String apiName,
       final ChannelHandlerContext channelHandlerContext,
@@ -22,10 +21,9 @@ public class GatewayHelper {
       return new GatewayService()
           .handleGatewayServiceRequests(channelHandlerContext, fullHttpRequest);
     } else if (Constants.THIS_APP_NAME.equals(apiName)) {
-      // TODO do something
-      return true;
+      return new GatewayService().handleGatewayServiceRequests(channelHandlerContext, fullHttpRequest);
     }
-    return false;
+      return false;
   }
 
   /** returns true if an error response HAS NOT been sent */
