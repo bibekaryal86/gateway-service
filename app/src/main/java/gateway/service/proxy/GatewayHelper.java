@@ -21,9 +21,10 @@ public class GatewayHelper {
       return new GatewayService()
           .handleGatewayServiceRequests(channelHandlerContext, fullHttpRequest);
     } else if (Constants.THIS_APP_NAME.equals(apiName)) {
-      return new GatewayService().handleGatewayServiceRequests(channelHandlerContext, fullHttpRequest);
+      return new GatewayService()
+          .handleGatewayServiceRequests(channelHandlerContext, fullHttpRequest);
     }
-      return false;
+    return false;
   }
 
   /** returns true if an error response HAS NOT been sent */

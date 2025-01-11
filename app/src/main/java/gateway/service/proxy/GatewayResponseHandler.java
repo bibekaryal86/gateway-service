@@ -4,6 +4,7 @@ import gateway.service.logging.LogLogger;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.util.AttributeKey;
 
 public class GatewayResponseHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
   private static final LogLogger logger = LogLogger.getLogger(GatewayResponseHandler.class);
@@ -22,14 +23,19 @@ public class GatewayResponseHandler extends SimpleChannelInboundHandler<FullHttp
       final ChannelHandlerContext channelHandlerContext /* unused */,
       final FullHttpResponse fullHttpResponse)
       throws Exception {
-    logger.debug("Received response from backend: {}", fullHttpResponse.status());
+    final String requestId =
+        (String) channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_ID")).get();
+    logger.info("Gateway Response: ID=[{}], Status=[{}]", requestId, fullHttpResponse.status());
+
     channelHandlerContextClient.writeAndFlush(fullHttpResponse.retain());
   }
 
   @Override
   public void exceptionCaught(
       final ChannelHandlerContext channelHandlerContext, final Throwable throwable) {
-    logger.error("Exception in Gateway Response Handler...", throwable);
+    final String requestId =
+        (String) channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_ID")).get();
+    logger.info("Gateway Response: ID=[{}], Status=[{}]", requestId, throwable);
     circuitBreaker.markFailure();
     channelHandlerContext.close();
     channelHandlerContextClient.close();

@@ -15,14 +15,17 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponseDecoder;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.util.AttributeKey;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,7 +45,12 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest)
       throws Exception {
     final String requestUri = fullHttpRequest.retain().uri();
-    final String apiName = extractApiName(fullHttpRequest.retain().uri());
+    final HttpMethod requestMethod = fullHttpRequest.retain().method();
+    final String apiName = extractApiName(requestUri);
+    final UUID requestUuid = UUID.randomUUID();
+    channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_ID")).set(requestUuid);
+    logger.info(
+        "[{}] Gateway Request: URI=[{}], Method=[{}]", requestUuid, requestUri, requestMethod);
 
     final boolean isGatewaySvcResponse =
         new GatewayHelper().gatewaySvcResponse(apiName, channelHandlerContext, fullHttpRequest);
@@ -106,9 +114,16 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
                         (ChannelFutureListener)
                             futureResponse -> {
                               if (!futureResponse.isSuccess()) {
+                                final String requestId =
+                                    (String)
+                                        channelHandlerContext
+                                            .channel()
+                                            .attr(AttributeKey.valueOf("REQUEST_ID"))
+                                            .get();
                                 logger.error(
-                                    "Response Handler Error: [{}],[{}]",
+                                    "Gateway Response Handler Error: [{}].[{}],[{}]",
                                     futureResponse.cause(),
+                                    requestId,
                                     apiName,
                                     requestUri);
                                 new GatewayHelper()
@@ -117,13 +132,18 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
                               }
                             });
               } else {
+                final String requestId =
+                    (String)
+                        channelHandlerContext
+                            .channel()
+                            .attr(AttributeKey.valueOf("REQUEST_ID"))
+                            .get();
+                logger.error("Gateway Response: ID=[{}], Status=[{}]", requestId, requestUri);
+
                 if (futureRequest.cause() != null) {
-                  logger.error("Connection Timed Out: [{}],[{}]", apiName, requestUri);
                   new GatewayHelper()
                       .sendErrorResponse(channelHandlerContext, HttpResponseStatus.GATEWAY_TIMEOUT);
                 } else {
-                  logger.error(
-                      "Connection Error: [{}],[{}]", futureRequest.cause(), apiName, requestUri);
                   new GatewayHelper()
                       .sendErrorResponse(
                           channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE);
@@ -136,7 +156,9 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
   @Override
   public void exceptionCaught(
       final ChannelHandlerContext channelHandlerContext, final Throwable throwable) {
-    logger.error("Exception in Gateway Request Handler...", throwable);
+    final String requestId =
+        (String) channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_ID")).get();
+    logger.error("Gateway Response: ID=[{}]", throwable, requestId);
 
     String backendHost = "";
     final CircuitBreaker circuitBreaker =
