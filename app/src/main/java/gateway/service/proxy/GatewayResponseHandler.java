@@ -10,12 +10,15 @@ import io.netty.util.AttributeKey;
 public class GatewayResponseHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
   private static final LogLogger logger = LogLogger.getLogger(GatewayResponseHandler.class);
   private final ChannelHandlerContext channelHandlerContextClient;
+  private final GatewayRequestDetails gatewayRequestDetails;
   private final CircuitBreaker circuitBreaker;
 
   public GatewayResponseHandler(
-      final ChannelHandlerContext channelHandlerContextClient,
-      final CircuitBreaker circuitBreaker) {
+          final ChannelHandlerContext channelHandlerContextClient,
+          final GatewayRequestDetails gatewayRequestDetails,
+          final CircuitBreaker circuitBreaker) {
     this.channelHandlerContextClient = channelHandlerContextClient;
+    this.gatewayRequestDetails = gatewayRequestDetails;
     this.circuitBreaker = circuitBreaker;
   }
 
@@ -24,8 +27,7 @@ public class GatewayResponseHandler extends SimpleChannelInboundHandler<FullHttp
       final ChannelHandlerContext channelHandlerContext /* unused */,
       final FullHttpResponse fullHttpResponse)
       throws Exception {
-    final GatewayRequestDetails gatewayRequestDetails = (GatewayRequestDetails) channelHandlerContext.channel().attr(AttributeKey.valueOf("REQUEST_DETAILS")).get();
-    logger.info("Gateway Response: [{}],[{}]", gatewayRequestDetails, fullHttpResponse.retain().status());
+    logger.info("Gateway Response: [{}],[{}]", this.gatewayRequestDetails, fullHttpResponse.retain().status());
     channelHandlerContextClient.writeAndFlush(fullHttpResponse.retain());
   }
 

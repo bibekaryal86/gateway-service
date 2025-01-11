@@ -102,7 +102,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
                     .addLast(new HttpClientCodec())
                     .addLast(new HttpObjectAggregator(Constants.MAX_CONTENT_LENGTH))
                     .addLast(new HttpResponseDecoder())
-                    .addLast(new GatewayResponseHandler(channelHandlerContext, circuitBreaker));
+                    .addLast(new GatewayResponseHandler(channelHandlerContext, gatewayRequestDetails, circuitBreaker));
               }
             });
 
