@@ -1,13 +1,12 @@
 package gateway.service.logging;
 
+import gateway.service.utils.Constants;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-
-import gateway.service.utils.Constants;
 
 public class LogFormatter extends Formatter {
   private static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";

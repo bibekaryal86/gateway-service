@@ -4,7 +4,6 @@ import gateway.service.logging.LogLogger;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Routes;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -14,15 +13,11 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponseDecoder;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -47,45 +42,35 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest)
       throws Exception {
     final String requestUri = fullHttpRequest.retain().uri();
+    final String apiName = extractApiName(fullHttpRequest.retain().uri());
 
-    // Check if the request is for the base path
-    if ("/".equals(requestUri) || "".equals(requestUri)) {
-      logger.debug("Sending Default Ping Response...");
-      sendDefaultPingResponse(channelHandlerContext);
+    final boolean isGatewaySvcResponse =
+        new GatewayHelper().gatewaySvcResponse(apiName, channelHandlerContext, fullHttpRequest);
+    if (isGatewaySvcResponse) {
       return;
     }
-
-    final String apiName = extractApiName(requestUri);
 
     final CircuitBreaker circuitBreaker =
         circuitBreakers.computeIfAbsent(
             apiName,
             key -> new CircuitBreaker(Constants.CB_FAILURE_THRESHOLD, Constants.CB_OPEN_TIMEOUT));
+    final boolean isCircuitBreakerResponse =
+        new GatewayHelper().circuitBreakerResponse(apiName, channelHandlerContext, circuitBreaker);
 
-    if (!circuitBreaker.allowRequest()) {
-      logger.error("Circuit Breaker Not Allowed: [{}],[{}]", apiName, circuitBreaker);
-      sendErrorResponse(channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE);
+    if (isCircuitBreakerResponse) {
       return;
     }
 
-    String clientId = extractClientId(channelHandlerContext);
-    RateLimiter rateLimiter =
-        rateLimiters.computeIfAbsent(
-            clientId,
-            key -> new RateLimiter(Constants.RL_MAX_REQUESTS, Constants.RL_TIME_WINDOW_MILLIS));
-
-    if (!rateLimiter.allowRequest()) {
-      logger.error("Rate Limiter Not Allowed: [{}],[{}]", clientId, rateLimiter);
-      circuitBreaker.markFailure();
-      sendErrorResponse(channelHandlerContext, HttpResponseStatus.TOO_MANY_REQUESTS);
+    final boolean isRateLimiterResponse =
+        new GatewayHelper().rateLimiterResponse(apiName, channelHandlerContext, rateLimiters);
+    if (isRateLimiterResponse) {
       return;
     }
 
     final URL transformedUrl = transformRequestUrl(apiName);
     if (transformedUrl == null) {
       logger.error("NULL Transformed URL: [{}],[{}]", apiName, requestUri);
-      circuitBreaker.markFailure();
-      sendErrorResponse(channelHandlerContext, HttpResponseStatus.BAD_REQUEST);
+      new GatewayHelper().sendErrorResponse(channelHandlerContext, HttpResponseStatus.BAD_REQUEST);
       return;
     }
 
@@ -126,18 +111,22 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
                                     futureResponse.cause(),
                                     apiName,
                                     requestUri);
-                                sendErrorResponse(
-                                    channelHandlerContext, HttpResponseStatus.BAD_GATEWAY);
+                                new GatewayHelper()
+                                    .sendErrorResponse(
+                                        channelHandlerContext, HttpResponseStatus.BAD_GATEWAY);
                               }
                             });
               } else {
                 if (futureRequest.cause() != null) {
                   logger.error("Connection Timed Out: [{}],[{}]", apiName, requestUri);
-                  sendErrorResponse(channelHandlerContext, HttpResponseStatus.GATEWAY_TIMEOUT);
+                  new GatewayHelper()
+                      .sendErrorResponse(channelHandlerContext, HttpResponseStatus.GATEWAY_TIMEOUT);
                 } else {
                   logger.error(
                       "Connection Error: [{}],[{}]", futureRequest.cause(), apiName, requestUri);
-                  sendErrorResponse(channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE);
+                  new GatewayHelper()
+                      .sendErrorResponse(
+                          channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE);
                 }
               }
             });
@@ -156,27 +145,24 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
             key -> new CircuitBreaker(Constants.CB_FAILURE_THRESHOLD, Constants.CB_OPEN_TIMEOUT));
     circuitBreaker.markFailure();
 
-    sendErrorResponse(channelHandlerContext, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+    new GatewayHelper()
+        .sendErrorResponse(channelHandlerContext, HttpResponseStatus.INTERNAL_SERVER_ERROR);
   }
 
-  private String extractApiName(final String requestUri) {
+  private String extractApiName(String requestUri) {
+    if ("/".equals(requestUri) || "".equals(requestUri)) {
+      return Constants.THIS_APP_NAME;
+    }
     if (requestUri.startsWith("/")) {
       return requestUri.substring(1);
     }
+    if (requestUri.contains("?")) {
+      requestUri = requestUri.split("\\?")[0];
+    }
+    if (requestUri.contains("/")) {
+      return requestUri.split("/")[0];
+    }
     return requestUri;
-  }
-
-  private String extractClientId(final ChannelHandlerContext channelHandlerContext) {
-    String remoteAddress = channelHandlerContext.channel().remoteAddress().toString();
-
-    if (remoteAddress.contains("/")) {
-      remoteAddress = remoteAddress.substring(remoteAddress.indexOf("/") + 1);
-    }
-    if (remoteAddress.contains(":")) {
-      remoteAddress = remoteAddress.substring(0, remoteAddress.indexOf(":"));
-    }
-
-    return remoteAddress;
   }
 
   private URL transformRequestUrl(final String apiName) {
@@ -205,26 +191,5 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
       }
     }
     return port;
-  }
-
-  private void sendErrorResponse(
-      final ChannelHandlerContext channelHandlerContext, final HttpResponseStatus status) {
-    FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
-    response.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
-    channelHandlerContext.writeAndFlush(response);
-    channelHandlerContext.close();
-  }
-
-  private void sendDefaultPingResponse(final ChannelHandlerContext channelHandlerContext) {
-    String jsonResponse = "{\"ping\": \"successful\"}";
-    FullHttpResponse response =
-        new DefaultFullHttpResponse(
-            HttpVersion.HTTP_1_1,
-            HttpResponseStatus.OK,
-            Unpooled.wrappedBuffer(jsonResponse.getBytes()));
-    response.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
-    response.headers().set(HttpHeaderNames.CONTENT_LENGTH, jsonResponse.length());
-    channelHandlerContext.writeAndFlush(response);
-    channelHandlerContext.close();
   }
 }

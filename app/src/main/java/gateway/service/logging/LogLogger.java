@@ -75,7 +75,7 @@ public class LogLogger {
     return obj == null ? "!!null!!" : obj.toString();
   }
 
-  private static void configureGlobalLogging(final Level level) {
+  public static void configureGlobalLogging(final Level level) {
     CURRENT_LOG_LEVEL.set(level);
 
     final Logger rootLogger = Logger.getLogger("");

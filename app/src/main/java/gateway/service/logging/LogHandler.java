@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
-import java.util.logging.StreamHandler;
 
 public class LogHandler extends Handler {
   private final ConcurrentLinkedQueue<LogRecord> logQueue = new ConcurrentLinkedQueue<>();
