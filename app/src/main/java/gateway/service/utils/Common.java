@@ -75,7 +75,6 @@ public class Common {
   }
 
   public static Level transformLogLevel(final String logLevel) {
-    // Mirrors LogFormatter.transformLogLevel
     switch (logLevel) {
       case "DEBUG" -> {
         return Level.FINE;
@@ -88,5 +87,18 @@ public class Common {
       }
     }
     return Level.INFO;
+  }
+
+  public static String transformLogLevel(final Level level) {
+    if (level == Level.FINE) {
+      return "DEBUG";
+    }
+    if (level == Level.WARNING) {
+      return "WARN";
+    }
+    if (level == Level.SEVERE) {
+      return "ERROR";
+    }
+    return level.getName();
   }
 }

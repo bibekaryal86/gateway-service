@@ -1,5 +1,6 @@
 package gateway.service.logging;
 
+import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -31,7 +32,7 @@ public class LogFormatter extends Formatter {
   public String format(final LogRecord logRecord) {
     String timestamp = dateFormat.format(new Date(logRecord.getMillis()));
     String threadName = Thread.currentThread().getName();
-    String level = transformLogLevel(logRecord.getLevel());
+    String level = Common.transformLogLevel(logRecord.getLevel());
     String loggerName = getShortLoggerName(logRecord.getLoggerName());
     String message = formatMessage(logRecord);
 
@@ -45,18 +46,5 @@ public class LogFormatter extends Formatter {
       return loggerName;
     }
     return loggerName.substring(loggerName.lastIndexOf('.') + 1);
-  }
-
-  private String transformLogLevel(final Level level) {
-    if (level == Level.FINE) {
-      return "DEBUG";
-    }
-    if (level == Level.WARNING) {
-      return "WARN";
-    }
-    if (level == Level.SEVERE) {
-      return "ERROR";
-    }
-    return level.getName();
   }
 }

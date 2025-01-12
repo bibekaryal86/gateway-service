@@ -40,14 +40,12 @@ public class NettyServer {
                 }
               });
 
-      final ChannelFuture channelFuture =
-          serverBootstrap
-              .bind(
-                  Integer.parseInt(
-                      Common.getSystemEnvProperty(Constants.ENV_PORT, Constants.ENV_PORT_DEFAULT)))
-              .sync();
+      final int serverPort =
+          Integer.parseInt(
+              Common.getSystemEnvProperty(Constants.ENV_PORT, Constants.ENV_PORT_DEFAULT));
+      final ChannelFuture channelFuture = serverBootstrap.bind(serverPort).sync();
 
-      logger.info("Gateway Server Started on Port 8000...");
+      logger.info("Gateway Server Started on Port [{}]...", serverPort);
       channelFuture.channel().closeFuture().sync();
     } finally {
       workerGroup.shutdownGracefully();

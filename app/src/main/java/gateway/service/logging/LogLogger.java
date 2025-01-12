@@ -21,6 +21,10 @@ public class LogLogger {
     return new LogLogger(clazz);
   }
 
+  public static Level getCurrentLogLevel() {
+    return CURRENT_LOG_LEVEL.get();
+  }
+
   public void debug(final String message, final Object... params) {
     if (isDebugEnabled()) {
       log(Level.FINE, formatMessage(message, params), null);
