@@ -16,16 +16,16 @@ public class GatewayRequestDetails implements Serializable {
 
   public GatewayRequestDetails(
       final HttpMethod requestMethod,
-      final String apiName,
       final String requestUri,
+      final String apiName,
       final String clientId,
       final String targetBaseUrl,
       final String targetHost,
       final Integer targetPort) {
     this.requestId = UUID.randomUUID();
     this.requestMethod = requestMethod;
-    this.apiName = apiName;
     this.requestUri = requestUri;
+    this.apiName = apiName;
     this.clientId = clientId;
     this.targetBaseUrl = targetBaseUrl;
     this.targetHost = targetHost;
@@ -66,15 +66,28 @@ public class GatewayRequestDetails implements Serializable {
 
   @Override
   public String toString() {
-    return "GatewayRequestDetails{" +
-            "requestId=" + requestId +
-            ", requestMethod=" + requestMethod +
-            ", requestUri='" + requestUri + '\'' +
-            ", apiName='" + apiName + '\'' +
-            ", clientId='" + clientId + '\'' +
-            ", targetBaseUrl='" + targetBaseUrl + '\'' +
-            ", targetHost='" + targetHost + '\'' +
-            ", targetPort=" + targetPort +
-            '}';
+    return "GatewayRequestDetails{"
+        + "requestId="
+        + requestId
+        + ", requestMethod="
+        + requestMethod
+        + ", requestUri='"
+        + requestUri
+        + '\''
+        + ", apiName='"
+        + apiName
+        + '\''
+        + ", clientId='"
+        + clientId
+        + '\''
+        + ", targetBaseUrl='"
+        + targetBaseUrl
+        + '\''
+        + ", targetHost='"
+        + targetHost
+        + '\''
+        + ", targetPort="
+        + targetPort
+        + '}';
   }
 }

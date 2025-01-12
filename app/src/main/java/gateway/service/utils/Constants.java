@@ -1,5 +1,7 @@
 package gateway.service.utils;
 
+import gateway.service.dtos.GatewayRequestDetails;
+import io.netty.util.AttributeKey;
 import java.time.Duration;
 import java.util.List;
 
@@ -39,6 +41,9 @@ public class Constants {
   public static final long ROUTES_REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes
 
   // PROXY
+  public static final AttributeKey<GatewayRequestDetails> GATEWAY_REQUEST_DETAILS_KEY =
+      AttributeKey.valueOf("GATEWAY_REQUEST_DETAILS");
+
   public static final int BOSS_GROUP_THREADS = 1;
   public static final int WORKER_GROUP_THREADS = 8;
   public static final int CONNECT_TIMEOUT_MILLIS = 5000; // 5 seconds
@@ -55,4 +60,12 @@ public class Constants {
   public static final String TESTS_PING = "/tests/ping";
   public static final String TESTS_RESET = "/tests/reset";
   public static final String TESTS_LOGS = "/tests/logs";
+
+  // GATEWAY SERVICE ENDPOINTS PARAMS
+  public static final String TEST_LOGS_PARAM = "level";
+
+  // GATEWAY SERVICE ENDPOINTS RESPONSE
+  public static final String TESTS_PING_RESPONSE = "{\"ping\": \"successful\"}";
+  public static final String TESTS_RESET_RESPONSE = "{\"reset\": \"successful\"}";
+  public static final String TESTS_LOGS_RESPONSE = "{\"log\": \"successful\"}";
 }

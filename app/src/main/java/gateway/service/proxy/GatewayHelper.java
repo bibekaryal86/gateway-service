@@ -67,43 +67,40 @@ public class GatewayHelper {
 
   public static void sendErrorResponse(
       final ChannelHandlerContext channelHandlerContext, final HttpResponseStatus status) {
-    // TODO add response logging
-    FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
-    response.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
-    channelHandlerContext.writeAndFlush(response);
+    FullHttpResponse fullHttpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
+    fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
+    channelHandlerContext.writeAndFlush(fullHttpResponse);
     channelHandlerContext.close();
   }
 
   public static void sendResponse(
       final String jsonResponse, final ChannelHandlerContext channelHandlerContext) {
-    // TODO, add response logging
-    FullHttpResponse response =
+    FullHttpResponse fullHttpResponse =
         new DefaultFullHttpResponse(
             HttpVersion.HTTP_1_1,
             HttpResponseStatus.OK,
             Unpooled.wrappedBuffer(jsonResponse.getBytes()));
-    response.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
-    response.headers().set(HttpHeaderNames.CONTENT_LENGTH, jsonResponse.length());
-    channelHandlerContext.writeAndFlush(response);
+    fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
+    fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_LENGTH, jsonResponse.length());
+    channelHandlerContext.writeAndFlush(fullHttpResponse);
     channelHandlerContext.close();
   }
 
   private static void handleTestsPing(final ChannelHandlerContext channelHandlerContext) {
-    String jsonResponse = "{\"ping\": \"successful\"}";
-    sendResponse(jsonResponse, channelHandlerContext);
+    sendResponse(Constants.TESTS_PING_RESPONSE, channelHandlerContext);
   }
 
   private static void handleTestsReset(final ChannelHandlerContext channelHandlerContext) {
     Routes.refreshRoutes();
-    String jsonResponse = "{\"reset\": \"successful\"}";
-    sendResponse(jsonResponse, channelHandlerContext);
+    sendResponse(Constants.TESTS_RESET_RESPONSE, channelHandlerContext);
   }
 
   private static void handleTestsLogs(
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest) {
-    final QueryStringDecoder queryStringDecoder = new QueryStringDecoder(fullHttpRequest.uri());
+    final QueryStringDecoder queryStringDecoder =
+        new QueryStringDecoder(fullHttpRequest.retain().uri());
     final Map<String, List<String>> parameters = queryStringDecoder.parameters();
-    final List<String> logLevels = parameters.get("level");
+    final List<String> logLevels = parameters.get(Constants.TEST_LOGS_PARAM);
 
     if (Common.isEmpty(logLevels)) {
       return;
@@ -112,7 +109,6 @@ public class GatewayHelper {
     final String logLevel = logLevels.getFirst();
     LogLogger.configureGlobalLogging(Common.transformLogLevel(logLevel));
 
-    String jsonResponse = "{\"log\": \"successful\"}";
-    sendResponse(jsonResponse, channelHandlerContext);
+    sendResponse(Constants.TESTS_LOGS_RESPONSE, channelHandlerContext);
   }
 }
