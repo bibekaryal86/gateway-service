@@ -19,13 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.logging.Level;
 
 public class GatewayHelper {
   public static final LogLogger logger = LogLogger.getLogger(GatewayHelper.class);
-  public static Timer timer = new Timer();
 
   public static boolean gatewaySvcResponse(
       final GatewayRequestDetails gatewayRequestDetails,
