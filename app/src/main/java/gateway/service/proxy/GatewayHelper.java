@@ -1,5 +1,6 @@
 package gateway.service.proxy;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.logging.LogLogger;
 import gateway.service.utils.Common;
@@ -14,11 +15,17 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.logging.Level;
 
 public class GatewayHelper {
+  public static final LogLogger logger = LogLogger.getLogger(GatewayHelper.class);
+  public static Timer timer = new Timer();
 
   public static boolean gatewaySvcResponse(
       final GatewayRequestDetails gatewayRequestDetails,
@@ -100,15 +107,63 @@ public class GatewayHelper {
     final QueryStringDecoder queryStringDecoder =
         new QueryStringDecoder(fullHttpRequest.retain().uri());
     final Map<String, List<String>> parameters = queryStringDecoder.parameters();
-    final List<String> logLevels = parameters.get(Constants.TEST_LOGS_PARAM);
+    final List<String> logLevels = parameters.get(Constants.TEST_LOGS_PARAM_LEVEL);
+    final List<String> logTimers = parameters.get(Constants.TEST_LOGS_PARAM_TIMER);
 
     if (Common.isEmpty(logLevels)) {
       return;
     }
 
-    final String logLevel = logLevels.getFirst();
-    LogLogger.configureGlobalLogging(Common.transformLogLevel(logLevel));
+    int logTimer = Constants.TEST_LOGS_PARAM_TIMER_DEFAULT;
+    if (!Common.isEmpty(logTimers)) {
+      final int logTimerParamInt = Common.parseIntNoEx(logTimers.getFirst());
+      logTimer =
+          Math.max(
+              Constants.TEST_LOGS_PARAM_TIMER_DEFAULT,
+              Math.min(Constants.TEST_LOGS_PARAM_TIMER_MAX, logTimerParamInt));
+    }
 
-    sendResponse(Constants.TESTS_LOGS_RESPONSE, channelHandlerContext);
+    final String currentLogLevel = Common.transformLogLevel(LogLogger.getCurrentLogLevel());
+    final String proposedLogLevel = logLevels.getFirst();
+    LogLogger.configureGlobalLogging(Common.transformLogLevel(proposedLogLevel));
+    handleTestsLogsTimer((long) logTimer * 60 * 60 * 1000);
+
+    sendResponse(
+        generateTestsLogsResponse(currentLogLevel, proposedLogLevel, logTimer),
+        channelHandlerContext);
+  }
+
+  private static void handleTestsLogsTimer(final long logTimer) {
+    try {
+      timer.cancel();
+      timer.purge();
+      timer = new Timer();
+      timer.schedule(
+          new TimerTask() {
+            @Override
+            public void run() {
+              LogLogger.configureGlobalLogging(Level.INFO);
+              timer.cancel();
+            }
+          },
+          logTimer * 60 * 60 * 1000);
+    } catch (Exception ex) {
+      logger.error("Handle Tests Logs Error...", ex);
+    }
+  }
+
+  private static String generateTestsLogsResponse(
+      final String oldLogLevel, final String newLogLevel, final int logTimer) {
+    Map<String, Object> testsLogsResponse = new HashMap<>();
+    testsLogsResponse.put("oldLogLevel", oldLogLevel);
+    testsLogsResponse.put("newLogLevel", newLogLevel);
+    testsLogsResponse.put("logTimer", logTimer);
+    testsLogsResponse.put(
+        "logTimerMessage", "Log Level will revert back to default of INFO after logTimer Minutes");
+    try {
+      return Common.objectMapperProvider().writeValueAsString(testsLogsResponse);
+    } catch (JsonProcessingException e) {
+      return Constants.TESTS_LOGS_RESPONSE;
+    }
   }
 }

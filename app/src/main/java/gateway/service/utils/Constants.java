@@ -62,7 +62,10 @@ public class Constants {
   public static final String TESTS_LOGS = "/tests/logs";
 
   // GATEWAY SERVICE ENDPOINTS PARAMS
-  public static final String TEST_LOGS_PARAM = "level";
+  public static final String TEST_LOGS_PARAM_LEVEL = "level";
+  public static final String TEST_LOGS_PARAM_TIMER = "timer";
+  public static final int TEST_LOGS_PARAM_TIMER_DEFAULT = 30; // keep log change for 30 minutes
+  public static final int TEST_LOGS_PARAM_TIMER_MAX = 1440; // max = 1 day before revert
 
   // GATEWAY SERVICE ENDPOINTS RESPONSE
   public static final String TESTS_PING_RESPONSE = "{\"ping\": \"successful\"}";

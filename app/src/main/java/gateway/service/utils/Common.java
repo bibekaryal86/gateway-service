@@ -65,6 +65,14 @@ public class Common {
     return (m == null || m.isEmpty());
   }
 
+  public static int parseIntNoEx(final String s) {
+    try {
+      return Integer.parseInt(s);
+    } catch (NumberFormatException ignored) {
+      return 0;
+    }
+  }
+
   public static boolean isProduction() {
     return Constants.PRODUCTION_ENV.equalsIgnoreCase(
         getSystemEnvProperty(Constants.SPRING_PROFILES_ACTIVE));
