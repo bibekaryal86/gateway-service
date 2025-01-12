@@ -14,10 +14,12 @@ public class Constants {
   public static final String AUTHSVC_USR = "AUTHSVC_USR";
   public static final String AUTHSVC_PWD = "AUTHSVC_PWD";
   public static final String ROUTES_MAP_URL = "ROUTES_MAP_URL";
+  public static final String SECRET_KEY = "SECRET_KEY";
   public static final List<String> ENV_KEY_NAMES =
       List.of(
           ENV_PORT,
           SPRING_PROFILES_ACTIVE,
+          SECRET_KEY,
           ENVSVC_USR,
           ENVSVC_PWD,
           AUTHSVC_USR,
