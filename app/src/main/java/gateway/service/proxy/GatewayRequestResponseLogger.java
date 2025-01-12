@@ -102,7 +102,7 @@ public class GatewayRequestResponseLogger extends ChannelDuplexHandler {
       return Constants.THIS_APP_NAME;
     }
     if (requestUri.startsWith("/")) {
-      return requestUri.substring(1);
+      requestUri = requestUri.substring(1);
     }
     if (requestUri.contains("?")) {
       requestUri = requestUri.split("\\?")[0];

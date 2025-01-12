@@ -57,15 +57,12 @@ public class Constants {
   public static final int RL_TIME_WINDOW_MILLIS = 1;
 
   // GATEWAY SERVICE ENDPOINTS
-  public static final String TESTS_PING = "/tests/ping";
-  public static final String TESTS_RESET = "/tests/reset";
-  public static final String TESTS_LOGS = "/tests/logs";
+  public static final String TESTS_PING = "/" + THIS_APP_NAME + "/tests/ping";
+  public static final String TESTS_RESET = "/" + THIS_APP_NAME + "/tests/reset";
+  public static final String TESTS_LOGS = "/" + THIS_APP_NAME + "/tests/logs";
 
   // GATEWAY SERVICE ENDPOINTS PARAMS
   public static final String TEST_LOGS_PARAM_LEVEL = "level";
-  public static final String TEST_LOGS_PARAM_TIMER = "timer";
-  public static final int TEST_LOGS_PARAM_TIMER_DEFAULT = 30; // keep log change for 30 minutes
-  public static final int TEST_LOGS_PARAM_TIMER_MAX = 1440; // max = 1 day before revert
 
   // GATEWAY SERVICE ENDPOINTS RESPONSE
   public static final String TESTS_PING_RESPONSE = "{\"ping\": \"successful\"}";
