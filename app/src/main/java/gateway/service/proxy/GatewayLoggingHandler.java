@@ -14,8 +14,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import org.jetbrains.annotations.NotNull;
 
-public class GatewayFilter extends ChannelDuplexHandler {
-  private static final LogLogger logger = LogLogger.getLogger(GatewayFilter.class);
+public class GatewayLoggingHandler extends ChannelDuplexHandler {
+  private static final LogLogger logger = LogLogger.getLogger(GatewayLoggingHandler.class);
 
   @Override
   public void channelRead(

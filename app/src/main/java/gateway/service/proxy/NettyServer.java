@@ -37,7 +37,8 @@ public class NettyServer {
                       .pipeline()
                       .addLast(new HttpServerCodec())
                       .addLast(new HttpObjectAggregator(Constants.MAX_CONTENT_LENGTH))
-                      .addLast(new GatewayFilter())
+                      .addLast(new GatewayLoggingHandler())
+                      .addLast(new GatewaySecurityHandler())
                       .addLast(new GatewayRequestHandler(workerGroup));
                 }
               });
