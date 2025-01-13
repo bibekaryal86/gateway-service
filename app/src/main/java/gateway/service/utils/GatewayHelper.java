@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.logging.LogLogger;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -46,24 +47,36 @@ public class GatewayHelper {
   }
 
   public static void sendErrorResponse(
-      final ChannelHandlerContext channelHandlerContext, final HttpResponseStatus status) {
-    FullHttpResponse fullHttpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
+      final ChannelHandlerContext channelHandlerContext,
+      final HttpResponseStatus status,
+      final String errMsg) {
+    final FullHttpResponse fullHttpResponse;
+    if (Common.isEmpty(errMsg)) {
+      fullHttpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
+    } else {
+      final String jsonResponse = String.format("{\"errMsg\": \"%s\"}", errMsg);
+      fullHttpResponse =
+          new DefaultFullHttpResponse(
+              HttpVersion.HTTP_1_1,
+              HttpResponseStatus.OK,
+              Unpooled.wrappedBuffer(jsonResponse.getBytes()));
+      fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_LENGTH, jsonResponse.length());
+    }
+
     fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
-    channelHandlerContext.writeAndFlush(fullHttpResponse);
-    channelHandlerContext.close();
+    channelHandlerContext.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
   }
 
   public static void sendResponse(
       final String jsonResponse, final ChannelHandlerContext channelHandlerContext) {
-    FullHttpResponse fullHttpResponse =
+    final FullHttpResponse fullHttpResponse =
         new DefaultFullHttpResponse(
             HttpVersion.HTTP_1_1,
             HttpResponseStatus.OK,
             Unpooled.wrappedBuffer(jsonResponse.getBytes()));
     fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
     fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_LENGTH, jsonResponse.length());
-    channelHandlerContext.writeAndFlush(fullHttpResponse);
-    channelHandlerContext.close();
+    channelHandlerContext.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
   }
 
   private static void handleTestsPing(final ChannelHandlerContext channelHandlerContext) {
