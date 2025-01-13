@@ -3,6 +3,7 @@ package gateway.service.proxy;
 import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.logging.LogLogger;
 import gateway.service.utils.Constants;
+import gateway.service.utils.GatewayHelper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;

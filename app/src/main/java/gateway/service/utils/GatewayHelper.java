@@ -1,11 +1,8 @@
-package gateway.service.proxy;
+package gateway.service.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.logging.LogLogger;
-import gateway.service.utils.Common;
-import gateway.service.utils.Constants;
-import gateway.service.utils.Routes;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
@@ -46,26 +43,6 @@ public class GatewayHelper {
     }
 
     return isGatewaySvcResponse;
-  }
-
-  /** returns true if an error response HAS NOT been sent */
-  public static boolean circuitBreakerResponse(
-      final ChannelHandlerContext channelHandlerContext, final CircuitBreaker circuitBreaker) {
-    if (circuitBreaker.allowRequest()) {
-      return false;
-    }
-    sendErrorResponse(channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE);
-    return true;
-  }
-
-  /** returns true if an error response HAS NOT been sent */
-  public static boolean rateLimiterResponse(
-      final ChannelHandlerContext channelHandlerContext, final RateLimiter rateLimiter) {
-    if (rateLimiter.allowRequest()) {
-      return false;
-    }
-    sendErrorResponse(channelHandlerContext, HttpResponseStatus.TOO_MANY_REQUESTS);
-    return true;
   }
 
   public static void sendErrorResponse(
