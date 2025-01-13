@@ -114,8 +114,7 @@ public class GatewayHelper {
     LogLogger.configureGlobalLogging(Common.transformLogLevel(proposedLogLevel));
 
     sendResponse(
-        generateTestsLogsResponse(currentLogLevel, proposedLogLevel),
-        channelHandlerContext);
+        generateTestsLogsResponse(currentLogLevel, proposedLogLevel), channelHandlerContext);
   }
 
   private static String generateTestsLogsResponse(

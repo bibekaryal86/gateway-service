@@ -97,9 +97,9 @@ public class LogLogger {
     rootLogger.setUseParentHandlers(false);
   }
 
-//  private static boolean isErrorEnabled() {
-//    return isWarnEnabled() || CURRENT_LOG_LEVEL.get() == Level.SEVERE;
-//  }
+  //  private static boolean isErrorEnabled() {
+  //    return isWarnEnabled() || CURRENT_LOG_LEVEL.get() == Level.SEVERE;
+  //  }
 
   private static boolean isWarnEnabled() {
     return isInfoEnabled() || CURRENT_LOG_LEVEL.get() == Level.WARNING;

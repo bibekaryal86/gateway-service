@@ -14,44 +14,59 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import org.jetbrains.annotations.NotNull;
 
-public class GatewayRequestResponseLogger extends ChannelDuplexHandler {
-  private static final LogLogger logger = LogLogger.getLogger(GatewayRequestResponseLogger.class);
+public class GatewayFilter extends ChannelDuplexHandler {
+  private static final LogLogger logger = LogLogger.getLogger(GatewayFilter.class);
 
   @Override
   public void channelRead(
       @NotNull final ChannelHandlerContext channelHandlerContext, @NotNull final Object object)
       throws Exception {
     if (object instanceof FullHttpRequest fullHttpRequest) {
-      final String requestContentLength =
-          fullHttpRequest.retain().headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
       final GatewayRequestDetails gatewayRequestDetails =
           extractGatewayRequestDetails(channelHandlerContext, fullHttpRequest);
-      channelHandlerContext
-          .channel()
-          .attr(Constants.GATEWAY_REQUEST_DETAILS_KEY)
-          .set(gatewayRequestDetails);
-      logger.info("Request: [{}], [{}]", gatewayRequestDetails, requestContentLength);
+      logRequest(gatewayRequestDetails, fullHttpRequest);
+      setGatewayRequestDetailsToChannelHandler(channelHandlerContext, gatewayRequestDetails);
     }
     super.channelRead(channelHandlerContext, object);
   }
 
   @Override
   public void write(
-      ChannelHandlerContext channelHandlerContext, Object object, ChannelPromise channelPromise)
+      final ChannelHandlerContext channelHandlerContext,
+      final Object object,
+      final ChannelPromise channelPromise)
       throws Exception {
     if (object instanceof FullHttpResponse fullHttpResponse) {
-      final String responseContentLength =
-          fullHttpResponse.retain().headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
-      final HttpResponseStatus responseStatus = fullHttpResponse.retain().status();
-      GatewayRequestDetails gatewayRequestDetails =
-          channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
-      logger.info(
-          "Response: [{}], [{}], [{}]",
-          gatewayRequestDetails,
-          responseStatus,
-          responseContentLength);
+      logResponse(channelHandlerContext, fullHttpResponse);
     }
     super.write(channelHandlerContext, object, channelPromise);
+  }
+
+  private void logRequest(
+      final GatewayRequestDetails gatewayRequestDetails, final FullHttpRequest fullHttpRequest) {
+    final String requestContentLength =
+        fullHttpRequest.retain().headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
+    logger.info("Request: [{}], [{}]", gatewayRequestDetails, requestContentLength);
+  }
+
+  private void setGatewayRequestDetailsToChannelHandler(
+      final ChannelHandlerContext channelHandlerContext,
+      final GatewayRequestDetails gatewayRequestDetails) {
+    channelHandlerContext
+        .channel()
+        .attr(Constants.GATEWAY_REQUEST_DETAILS_KEY)
+        .set(gatewayRequestDetails);
+  }
+
+  private void logResponse(
+      final ChannelHandlerContext channelHandlerContext, final FullHttpResponse fullHttpResponse) {
+    final String responseContentLength =
+        fullHttpResponse.retain().headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
+    final HttpResponseStatus responseStatus = fullHttpResponse.retain().status();
+    GatewayRequestDetails gatewayRequestDetails =
+        channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
+    logger.info(
+        "Response: [{}], [{}], [{}]", gatewayRequestDetails, responseStatus, responseContentLength);
   }
 
   private GatewayRequestDetails extractGatewayRequestDetails(
