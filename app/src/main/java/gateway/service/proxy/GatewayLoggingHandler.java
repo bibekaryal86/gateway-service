@@ -2,7 +2,9 @@ package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.logging.LogLogger;
+import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
+import gateway.service.utils.GatewayHelper;
 import gateway.service.utils.Routes;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -12,6 +14,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+
 import org.jetbrains.annotations.NotNull;
 
 public class GatewayLoggingHandler extends ChannelDuplexHandler {
@@ -24,8 +27,20 @@ public class GatewayLoggingHandler extends ChannelDuplexHandler {
     if (object instanceof FullHttpRequest fullHttpRequest) {
       final GatewayRequestDetails gatewayRequestDetails =
           extractGatewayRequestDetails(channelHandlerContext, fullHttpRequest);
-      logRequest(gatewayRequestDetails, fullHttpRequest);
-      setGatewayRequestDetailsToChannelHandler(channelHandlerContext, gatewayRequestDetails);
+
+      if (gatewayRequestDetails == null) {
+        GatewayHelper.sendErrorResponse(channelHandlerContext, HttpResponseStatus.BAD_REQUEST, "Gateway Request Details NULL Error...");
+        return;
+      }
+
+      final String requestContentLength = fullHttpRequest.retain().headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
+      logger.info("[{}] Request: [{}], [{}]", gatewayRequestDetails.getRequestId(), gatewayRequestDetails , requestContentLength);
+
+      // set gateway request details in channel handler context for later use
+      channelHandlerContext
+              .channel()
+              .attr(Constants.GATEWAY_REQUEST_DETAILS_KEY)
+              .set(gatewayRequestDetails);
     }
     super.channelRead(channelHandlerContext, object);
   }
@@ -37,36 +52,17 @@ public class GatewayLoggingHandler extends ChannelDuplexHandler {
       final ChannelPromise channelPromise)
       throws Exception {
     if (object instanceof FullHttpResponse fullHttpResponse) {
-      logResponse(channelHandlerContext, fullHttpResponse);
+      final String responseContentLength =
+              fullHttpResponse.retain().headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
+      final HttpResponseStatus responseStatus = fullHttpResponse.retain().status();
+      GatewayRequestDetails gatewayRequestDetails = channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
+      logger.info(
+          "[{}] Response: [{}], [{}]",
+          Common.getRequestId(gatewayRequestDetails),
+          responseStatus,
+          responseContentLength);
     }
     super.write(channelHandlerContext, object, channelPromise);
-  }
-
-  private void logRequest(
-      final GatewayRequestDetails gatewayRequestDetails, final FullHttpRequest fullHttpRequest) {
-    final String requestContentLength =
-        fullHttpRequest.retain().headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
-    logger.info("Request: [{}], [{}]", gatewayRequestDetails, requestContentLength);
-  }
-
-  private void setGatewayRequestDetailsToChannelHandler(
-      final ChannelHandlerContext channelHandlerContext,
-      final GatewayRequestDetails gatewayRequestDetails) {
-    channelHandlerContext
-        .channel()
-        .attr(Constants.GATEWAY_REQUEST_DETAILS_KEY)
-        .set(gatewayRequestDetails);
-  }
-
-  private void logResponse(
-      final ChannelHandlerContext channelHandlerContext, final FullHttpResponse fullHttpResponse) {
-    final String responseContentLength =
-        fullHttpResponse.retain().headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
-    final HttpResponseStatus responseStatus = fullHttpResponse.retain().status();
-    GatewayRequestDetails gatewayRequestDetails =
-        channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
-    logger.info(
-        "Response: [{}], [{}], [{}]", gatewayRequestDetails, responseStatus, responseContentLength);
   }
 
   private GatewayRequestDetails extractGatewayRequestDetails(

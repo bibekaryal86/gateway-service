@@ -58,7 +58,7 @@ public class GatewayHelper {
       fullHttpResponse =
           new DefaultFullHttpResponse(
               HttpVersion.HTTP_1_1,
-              HttpResponseStatus.OK,
+              status,
               Unpooled.wrappedBuffer(jsonResponse.getBytes()));
       fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_LENGTH, jsonResponse.length());
     }

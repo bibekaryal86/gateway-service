@@ -8,6 +8,7 @@ public class GatewayRequestDetails implements Serializable {
   private final UUID requestId;
   private final HttpMethod requestMethod;
   private final String requestUri;
+  private final String requestUriLessApiName;
   private final String apiName;
   private final String clientId;
   private final String targetBaseUrl;
@@ -26,6 +27,7 @@ public class GatewayRequestDetails implements Serializable {
     this.requestMethod = requestMethod;
     this.requestUri = requestUri;
     this.apiName = apiName;
+    this.requestUriLessApiName = this.setRequestUriLessApiName(requestUri, apiName);
     this.clientId = clientId;
     this.targetBaseUrl = targetBaseUrl;
     this.targetHost = targetHost;
@@ -42,6 +44,10 @@ public class GatewayRequestDetails implements Serializable {
 
   public String getRequestUri() {
     return requestUri;
+  }
+
+  public String getRequestUriLessApiName() {
+    return requestUriLessApiName;
   }
 
   public String getApiName() {
@@ -64,12 +70,18 @@ public class GatewayRequestDetails implements Serializable {
     return targetPort;
   }
 
+  // transform /gatewaysvc/tests/api to /tests/api
+  private String setRequestUriLessApiName(final String requestUri, final String apiName) {
+    return requestUri.replace("/" + apiName, "");
+  }
+
   @Override
   public String toString() {
     return "GatewayRequestDetails{"
-        + "requestId="
-        + requestId
-        + ", requestMethod="
+//        + "requestId="
+//        + requestId
+//        + ", requestMethod="
+        + "requestMethod="
         + requestMethod
         + ", requestUri='"
         + requestUri

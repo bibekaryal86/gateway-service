@@ -2,6 +2,8 @@ package gateway.service.utils;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import gateway.service.dtos.GatewayRequestDetails;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -76,6 +78,10 @@ public class Common {
   public static boolean isProduction() {
     return Constants.PRODUCTION_ENV.equalsIgnoreCase(
         getSystemEnvProperty(Constants.SPRING_PROFILES_ACTIVE));
+  }
+
+  public static String getRequestId(final GatewayRequestDetails gatewayRequestDetails) {
+    return gatewayRequestDetails == null ? "!NULL_GRD!" : gatewayRequestDetails.getRequestId().toString();
   }
 
   public static ObjectMapper objectMapperProvider() {

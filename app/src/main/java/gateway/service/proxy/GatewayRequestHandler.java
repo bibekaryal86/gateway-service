@@ -2,6 +2,7 @@ package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.logging.LogLogger;
+import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.GatewayHelper;
 import io.netty.bootstrap.Bootstrap;
@@ -61,7 +62,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
             gatewayRequestDetails.getApiName(),
             key -> new CircuitBreaker(Constants.CB_FAILURE_THRESHOLD, Constants.CB_OPEN_TIMEOUT));
     if (!circuitBreaker.allowRequest()) {
-      logger.error("CircuitBreaker Response: [{}], [{}]", gatewayRequestDetails, circuitBreaker);
+      logger.error("[{}] CircuitBreaker Response: [{}]", gatewayRequestDetails.getRequestId(), circuitBreaker);
       GatewayHelper.sendErrorResponse(
           channelHandlerContext,
           HttpResponseStatus.SERVICE_UNAVAILABLE,
@@ -74,7 +75,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
             gatewayRequestDetails.getClientId(),
             key -> new RateLimiter(Constants.RL_MAX_REQUESTS, Constants.RL_TIME_WINDOW_MILLIS));
     if (!rateLimiter.allowRequest()) {
-      logger.error("RateLimiter Response: [{}], [{}]", gatewayRequestDetails, rateLimiter);
+      logger.error("[{}] RateLimiter Response: [{}]", gatewayRequestDetails.getRequestId(), rateLimiter);
       GatewayHelper.sendErrorResponse(
           channelHandlerContext,
           HttpResponseStatus.TOO_MANY_REQUESTS,
@@ -116,7 +117,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
                             futureResponse -> {
                               if (!futureResponse.isSuccess()) {
                                 logger.error(
-                                    "Gateway Response Handler Error:", futureResponse.cause());
+                                    "[{}] Gateway Response Handler Error:", futureResponse.cause(), gatewayRequestDetails.getRequestId());
                                 GatewayHelper.sendErrorResponse(
                                     channelHandlerContext,
                                     HttpResponseStatus.BAD_GATEWAY,
@@ -143,7 +144,9 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
   @Override
   public void exceptionCaught(
       final ChannelHandlerContext channelHandlerContext, final Throwable throwable) {
-    logger.error("Gateway Request Handler Exception Caught...", throwable);
+    final GatewayRequestDetails gatewayRequestDetails =
+            channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
+    logger.error("[{}] Gateway Request Handler Exception Caught...", throwable, Common.getRequestId(gatewayRequestDetails));
 
     GatewayHelper.sendErrorResponse(
         channelHandlerContext,
