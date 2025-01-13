@@ -45,6 +45,8 @@ public class GatewaySecurityHandler extends ChannelDuplexHandler {
         return;
       }
 
+      // TODO check authsvc which requires jwt auth as well as basic auth
+
       // update request with basic auth after token validated
       String appUsername = Routes.getAuthApps().get(gatewayRequestDetails.getApiName() + Constants.AUTH_APPS_USR);
       String appPassword = Routes.getAuthApps().get(gatewayRequestDetails.getApiName() + Constants.AUTH_APPS_PWD);
