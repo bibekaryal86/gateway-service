@@ -4,11 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gateway.service.dtos.EnvDetailsResponse;
 import gateway.service.logging.LogLogger;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 public class Routes {
   private static final LogLogger logger = LogLogger.getLogger(Routes.class);
@@ -16,6 +21,7 @@ public class Routes {
   private static Timer timer;
   private static Map<String, String> ROUTES_MAP = new HashMap<>();
   private static List<String> AUTH_EXCLUSIONS = new ArrayList<>();
+  private static Map<String, String> AUTH_APPS = new HashMap<>();
 
   private static final String ROUTE_API_URL = Common.getSystemEnvProperty(Constants.ROUTES_MAP_URL);
   private static final String ROUTE_API_AUTH =
@@ -64,6 +70,20 @@ public class Routes {
                   .orElseThrow()
                   .getMapValue();
           logger.info("Gateway Service Env Details Routes Map Size: [{}]", ROUTES_MAP.size());
+
+          AUTH_APPS =
+              envDetailsList.stream()
+                  .filter(envDetail -> envDetail.getName().equals(Constants.AUTH_APPS_NAME))
+                  .findFirst()
+                  .orElseThrow()
+                  .getMapValue()
+                  .entrySet()
+                  .stream()
+                  .collect(
+                      Collectors.toMap(
+                          Map.Entry::getKey,
+                          entry -> decryptSecret(entry.getValue(), entry.getKey())));
+          logger.info("Gateway Service Env Details Auth Map Size: [{}]", AUTH_APPS.size());
         } else {
           logger.info(
               "Failed to Fetch Gateway Service Env Details, Error Response: [{}]",
@@ -95,6 +115,10 @@ public class Routes {
     return AUTH_EXCLUSIONS;
   }
 
+  public static Map<String, String> getAuthApps() {
+    return AUTH_APPS;
+  }
+
   // Refresh routes periodically
   public static void refreshRoutes() {
     logger.info("Starting Routes Timer...");
@@ -121,4 +145,35 @@ public class Routes {
                   }
                 }));
   }
+
+  private static String decryptSecret(final String encryptedData, final String keyNameForLogging) {
+    final String secretKey = Common.getSystemEnvProperty(Constants.SECRET_KEY);
+    final byte[] secretKeyBytes = Arrays.copyOf(secretKey.getBytes(), 32);
+    final SecretKeySpec secretKeySpec = new SecretKeySpec(secretKeyBytes, "AES");
+
+    try {
+      Cipher cipher = Cipher.getInstance("AES");
+      cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
+      byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
+      return new String(decryptedBytes);
+    } catch (Exception ex) {
+      logger.error("Error Decrypting Secret: [{}]", ex, keyNameForLogging);
+      return "";
+    }
+  }
+
+  /*
+  Encrypt method kept here for reference only
+
+  public static String encryptSecret(String data) throws Exception {
+    String secretKey = Common.getSystemEnvProperty(Constants.SECRET_KEY);
+    byte[] secretKeyBytes = Arrays.copyOf(secretKey.getBytes(), 32);
+    SecretKeySpec keySpec = new SecretKeySpec(secretKeyBytes, "AES");
+
+    Cipher cipher = Cipher.getInstance("AES");
+    cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+    byte[] encryptedBytes = cipher.doFinal(data.getBytes());
+    return Base64.getEncoder().encodeToString(encryptedBytes);
+  }
+   */
 }

@@ -27,6 +27,7 @@ public class Constants {
           ROUTES_MAP_URL);
 
   // ENV DETAILS
+  public static final String AUTH_APPS_NAME = "AUTH_APPS";
   public static final String AUTH_EXCLUSIONS_NAME = "AUTH_EXCLUSIONS_ENDS_WITH";
   public static final String BASE_URLS_NAME_BEGINS_WITH = "BASE_URLS";
 
