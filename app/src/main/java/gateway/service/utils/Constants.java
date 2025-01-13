@@ -40,6 +40,10 @@ public class Constants {
   public static final int HTTPS_DEFAULT_PORT = 443;
   public static final int HTTP_DEFAULT_PORT = 80;
 
+  public static final String BEARER_AUTH = "Bearer ";
+  public static final String AUTH_APPS_USR = "_usr";
+  public static final String AUTH_APPS_PWD = "_pwd";
+
   // UTILS
   public static final long ROUTES_REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes
 
