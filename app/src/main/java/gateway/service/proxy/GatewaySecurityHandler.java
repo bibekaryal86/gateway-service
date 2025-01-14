@@ -28,6 +28,7 @@ public class GatewaySecurityHandler extends ChannelDuplexHandler {
           .anyMatch(gatewayRequestDetails.getRequestUriLessApiName()::startsWith)) {
         logger.debug("[{}] Excluded From Authorization...", gatewayRequestDetails.getRequestId());
         super.channelRead(channelHandlerContext, fullHttpRequest);
+        return;
       }
 
       // check if there is an auth token
