@@ -89,7 +89,7 @@ public class Gateway {
   private static void handleTestsLogs(
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest) {
     final QueryStringDecoder queryStringDecoder =
-        new QueryStringDecoder(fullHttpRequest.retain().uri());
+        new QueryStringDecoder(fullHttpRequest.uri());
     final Map<String, List<String>> parameters = queryStringDecoder.parameters();
     final List<String> logLevels = parameters.get(Constants.TEST_LOGS_PARAM_LEVEL);
 

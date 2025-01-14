@@ -36,7 +36,7 @@ public class GatewayLoggingHandler extends ChannelDuplexHandler {
       }
 
       final String requestContentLength =
-          fullHttpRequest.retain().headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
+          fullHttpRequest.headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
       logger.info(
           "[{}] Request: [{}], [{}]",
           gatewayRequestDetails.getRequestId(),
@@ -60,8 +60,8 @@ public class GatewayLoggingHandler extends ChannelDuplexHandler {
       throws Exception {
     if (object instanceof FullHttpResponse fullHttpResponse) {
       final String responseContentLength =
-          fullHttpResponse.retain().headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
-      final HttpResponseStatus responseStatus = fullHttpResponse.retain().status();
+          fullHttpResponse.headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
+      final HttpResponseStatus responseStatus = fullHttpResponse.status();
       GatewayRequestDetails gatewayRequestDetails =
           channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
       logger.info(
@@ -75,8 +75,8 @@ public class GatewayLoggingHandler extends ChannelDuplexHandler {
 
   private GatewayRequestDetails extractGatewayRequestDetails(
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest) {
-    final String requestUri = fullHttpRequest.retain().uri();
-    final HttpMethod requestMethod = fullHttpRequest.retain().method();
+    final String requestUri = fullHttpRequest.uri();
+    final HttpMethod requestMethod = fullHttpRequest.method();
     final String apiName = extractApiName(requestUri);
     final String clientId = extractClientId(channelHandlerContext);
     final String targetBaseUrl = Routes.getTargetBaseUrl(apiName);

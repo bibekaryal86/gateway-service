@@ -114,7 +114,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
               if (futureRequest.isSuccess()) {
                 futureRequest
                     .channel()
-                    .writeAndFlush(fullHttpRequest.retain())
+                    .writeAndFlush(fullHttpRequest)
                     .addListener(
                         (ChannelFutureListener)
                             futureResponse -> {

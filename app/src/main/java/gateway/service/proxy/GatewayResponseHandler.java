@@ -22,7 +22,7 @@ public class GatewayResponseHandler extends SimpleChannelInboundHandler<FullHttp
       final ChannelHandlerContext channelHandlerContext /* unused */,
       final FullHttpResponse fullHttpResponse)
       throws Exception {
-    channelHandlerContextClient.writeAndFlush(fullHttpResponse.retain());
+    channelHandlerContextClient.writeAndFlush(fullHttpResponse);
   }
 
   @Override
