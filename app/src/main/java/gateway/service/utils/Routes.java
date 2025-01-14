@@ -25,7 +25,7 @@ public class Routes {
 
   private static final String ROUTE_API_URL = Common.getSystemEnvProperty(Constants.ROUTES_MAP_URL);
   private static final String ROUTE_API_AUTH =
-      Connector.createBasicAuthHeader(
+      Common.getBasicAuth(
           Common.getSystemEnvProperty(Constants.ENVSVC_USR),
           Common.getSystemEnvProperty(Constants.ENVSVC_PWD));
 

@@ -3,7 +3,6 @@ package gateway.service.utils;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gateway.service.dtos.GatewayRequestDetails;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collection;
@@ -83,11 +82,15 @@ public class Common {
   }
 
   public static String getRequestId(final GatewayRequestDetails gatewayRequestDetails) {
-    return gatewayRequestDetails == null ? "!NULL_GRD!" : gatewayRequestDetails.getRequestId().toString();
+    return gatewayRequestDetails == null
+        ? "!NULL_GRD!"
+        : gatewayRequestDetails.getRequestId().toString();
   }
 
   public static String getBasicAuth(final String appUsername, final String appPassword) {
-    return "Basic " + Base64.getEncoder().encodeToString((appUsername + ":" + appPassword).getBytes(StandardCharsets.UTF_8));
+    return "Basic "
+        + Base64.getEncoder()
+            .encodeToString((appUsername + ":" + appPassword).getBytes(StandardCharsets.UTF_8));
   }
 
   public static ObjectMapper objectMapperProvider() {

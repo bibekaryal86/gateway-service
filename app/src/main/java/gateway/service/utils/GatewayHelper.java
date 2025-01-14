@@ -57,9 +57,7 @@ public class GatewayHelper {
       final String jsonResponse = String.format("{\"errMsg\": \"%s\"}", errMsg);
       fullHttpResponse =
           new DefaultFullHttpResponse(
-              HttpVersion.HTTP_1_1,
-              status,
-              Unpooled.wrappedBuffer(jsonResponse.getBytes()));
+              HttpVersion.HTTP_1_1, status, Unpooled.wrappedBuffer(jsonResponse.getBytes()));
       fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_LENGTH, jsonResponse.length());
     }
 

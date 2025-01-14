@@ -2,9 +2,9 @@ package gateway.service.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import gateway.service.logging.LogLogger;
-import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import okhttp3.ConnectionPool;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -18,6 +18,8 @@ public class Connector {
       new OkHttpClient.Builder()
           .connectTimeout(5, TimeUnit.SECONDS)
           .readTimeout(15, TimeUnit.SECONDS)
+          .writeTimeout(15, TimeUnit.SECONDS)
+          .connectionPool(new ConnectionPool(10, 5, TimeUnit.MINUTES))
           .build();
 
   public static HttpResponse sendRequest(
@@ -67,11 +69,6 @@ public class Connector {
     }
 
     return requestBuilder.build();
-  }
-
-  public static String createBasicAuthHeader(final String username, final String password) {
-    String credentials = username + ":" + password;
-    return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes());
   }
 
   public record HttpResponse(int statusCode, String responseBody) {}
