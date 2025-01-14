@@ -4,7 +4,7 @@ import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.logging.LogLogger;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
-import gateway.service.utils.GatewayHelper;
+import gateway.service.utils.Gateway;
 import gateway.service.utils.Routes;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -28,7 +28,7 @@ public class GatewayLoggingHandler extends ChannelDuplexHandler {
           extractGatewayRequestDetails(channelHandlerContext, fullHttpRequest);
 
       if (gatewayRequestDetails == null) {
-        GatewayHelper.sendErrorResponse(
+        Gateway.sendErrorResponse(
             channelHandlerContext,
             HttpResponseStatus.BAD_REQUEST,
             "Gateway Request Details NULL Error...");

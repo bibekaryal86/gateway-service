@@ -14,6 +14,7 @@ public class Constants {
   public static final String AUTHSVC_USR = "AUTHSVC_USR";
   public static final String AUTHSVC_PWD = "AUTHSVC_PWD";
   public static final String ROUTES_MAP_URL = "ROUTES_MAP_URL";
+  public static final String VALIDATE_TOKEN_URL = "VALIDATE_TOKEN_URL";
   public static final String SECRET_KEY = "SECRET_KEY";
   public static final List<String> ENV_KEY_NAMES =
       List.of(
@@ -24,7 +25,8 @@ public class Constants {
           ENVSVC_PWD,
           AUTHSVC_USR,
           AUTHSVC_PWD,
-          ROUTES_MAP_URL);
+          ROUTES_MAP_URL,
+          VALIDATE_TOKEN_URL);
 
   // ENV DETAILS
   public static final String AUTH_APPS_NAME = "AUTH_APPS";

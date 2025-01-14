@@ -4,7 +4,7 @@ import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.logging.LogLogger;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
-import gateway.service.utils.GatewayHelper;
+import gateway.service.utils.Gateway;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -43,7 +43,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
         channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
 
     if (gatewayRequestDetails == null) {
-      GatewayHelper.sendErrorResponse(
+      Gateway.sendErrorResponse(
           channelHandlerContext,
           HttpResponseStatus.BAD_REQUEST,
           "Gateway Request Details Error...");
@@ -51,8 +51,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
     }
 
     final boolean isGatewaySvcResponse =
-        GatewayHelper.gatewaySvcResponse(
-            gatewayRequestDetails, channelHandlerContext, fullHttpRequest);
+        Gateway.gatewaySvcResponse(gatewayRequestDetails, channelHandlerContext, fullHttpRequest);
     if (isGatewaySvcResponse) {
       return;
     }
@@ -66,7 +65,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
           "[{}] CircuitBreaker Response: [{}]",
           gatewayRequestDetails.getRequestId(),
           circuitBreaker);
-      GatewayHelper.sendErrorResponse(
+      Gateway.sendErrorResponse(
           channelHandlerContext,
           HttpResponseStatus.SERVICE_UNAVAILABLE,
           "Maximum Failures Allowed Exceeded...");
@@ -80,7 +79,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
     if (!rateLimiter.allowRequest()) {
       logger.error(
           "[{}] RateLimiter Response: [{}]", gatewayRequestDetails.getRequestId(), rateLimiter);
-      GatewayHelper.sendErrorResponse(
+      Gateway.sendErrorResponse(
           channelHandlerContext,
           HttpResponseStatus.TOO_MANY_REQUESTS,
           "Maximum Request Allowed Exceeded...");
@@ -124,7 +123,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
                                     "[{}] Gateway Response Handler Error:",
                                     futureResponse.cause(),
                                     gatewayRequestDetails.getRequestId());
-                                GatewayHelper.sendErrorResponse(
+                                Gateway.sendErrorResponse(
                                     channelHandlerContext,
                                     HttpResponseStatus.BAD_GATEWAY,
                                     "Gateway Response Handler Error...");
@@ -132,12 +131,12 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
                             });
               } else {
                 if (futureRequest.cause() != null) {
-                  GatewayHelper.sendErrorResponse(
+                  Gateway.sendErrorResponse(
                       channelHandlerContext,
                       HttpResponseStatus.GATEWAY_TIMEOUT,
                       "Connection Timeout...");
                 } else {
-                  GatewayHelper.sendErrorResponse(
+                  Gateway.sendErrorResponse(
                       channelHandlerContext,
                       HttpResponseStatus.SERVICE_UNAVAILABLE,
                       "Something Went Wrong...");
@@ -157,7 +156,7 @@ public class GatewayRequestHandler extends SimpleChannelInboundHandler<FullHttpR
         throwable,
         Common.getRequestId(gatewayRequestDetails));
 
-    GatewayHelper.sendErrorResponse(
+    Gateway.sendErrorResponse(
         channelHandlerContext,
         HttpResponseStatus.INTERNAL_SERVER_ERROR,
         "Gateway Request Handler Exception...");

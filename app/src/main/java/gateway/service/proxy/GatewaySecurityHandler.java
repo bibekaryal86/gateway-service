@@ -4,8 +4,9 @@ import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.logging.LogLogger;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
-import gateway.service.utils.GatewayHelper;
+import gateway.service.utils.Gateway;
 import gateway.service.utils.Routes;
+import gateway.service.utils.Validate;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
@@ -34,7 +35,7 @@ public class GatewaySecurityHandler extends ChannelDuplexHandler {
           fullHttpRequest.retain().headers().get(HttpHeaderNames.AUTHORIZATION);
       if (Common.isEmpty(authHeader) || !authHeader.startsWith(Constants.BEARER_AUTH)) {
         logger.error("[{}] Auth Header Missing/Invalid...", gatewayRequestDetails.getRequestId());
-        GatewayHelper.sendErrorResponse(
+        Gateway.sendErrorResponse(
             channelHandlerContext,
             HttpResponseStatus.UNAUTHORIZED,
             "Missing or Malformed Authorization Header");
@@ -42,11 +43,10 @@ public class GatewaySecurityHandler extends ChannelDuplexHandler {
       }
 
       // validate the auth token
-      String token = authHeader.substring(Constants.BEARER_AUTH.length());
-      boolean isValid = validateTokenWithAuthServer(token);
+      boolean isValid = Validate.validateToken(authHeader);
       if (!isValid) {
         logger.error("[{}] Auth Token Not Valid...", gatewayRequestDetails.getRequestId());
-        GatewayHelper.sendErrorResponse(
+        Gateway.sendErrorResponse(
             channelHandlerContext, HttpResponseStatus.UNAUTHORIZED, "Invalid Authorization Header");
         return;
       }
@@ -61,24 +61,19 @@ public class GatewaySecurityHandler extends ChannelDuplexHandler {
 
       if (Common.isEmpty(appUsername) || Common.isEmpty(appPassword)) {
         logger.error("[{}] Auth Credentials Not Found...", gatewayRequestDetails.getRequestId());
-        GatewayHelper.sendErrorResponse(
+        Gateway.sendErrorResponse(
             channelHandlerContext,
             HttpResponseStatus.NETWORK_AUTHENTICATION_REQUIRED,
             "Missing Auth Credentials");
         return;
       }
 
-      fullHttpRequest
-          .headers()
-          .set(HttpHeaderNames.AUTHORIZATION, Common.getBasicAuth(appUsername, appPassword));
-      logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
+//      fullHttpRequest
+//          .headers()
+//          .set(HttpHeaderNames.AUTHORIZATION, Common.getBasicAuth(appUsername, appPassword));
+//      logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
     }
 
     super.channelRead(channelHandlerContext, object);
-  }
-
-  private boolean validateTokenWithAuthServer(String token) {
-    // TODO
-    return true;
   }
 }

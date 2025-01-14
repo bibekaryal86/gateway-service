@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class GatewayHelper {
-  public static final LogLogger logger = LogLogger.getLogger(GatewayHelper.class);
+public class Gateway {
+  public static final LogLogger logger = LogLogger.getLogger(Gateway.class);
 
   public static boolean gatewaySvcResponse(
       final GatewayRequestDetails gatewayRequestDetails,

@@ -3,6 +3,7 @@ package gateway.service.utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gateway.service.dtos.EnvDetailsResponse;
 import gateway.service.logging.LogLogger;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -30,12 +31,12 @@ public class Routes {
           Common.getSystemEnvProperty(Constants.ENVSVC_PWD));
 
   public static void init() {
-    logger.info("Retrieving Env Details...");
+    logger.debug("Retrieving Env Details...");
 
     Connector.HttpResponse response =
         Connector.sendRequest(ROUTE_API_URL, "GET", "", null, ROUTE_API_AUTH);
 
-    if (response.statusCode() == 200) {
+    if (response.statusCode() == HttpResponseStatus.OK.code()) {
       try {
         final ObjectMapper objectMapper = Common.objectMapperProvider();
         EnvDetailsResponse envDetailResponse =
@@ -50,7 +51,7 @@ public class Routes {
                   .findFirst()
                   .orElseThrow()
                   .getListValue();
-          logger.info(
+          logger.debug(
               "Gateway Service Env Details Auth Exclusions List Size: [{}]",
               AUTH_EXCLUSIONS.size());
 
@@ -69,7 +70,7 @@ public class Routes {
                   .findFirst()
                   .orElseThrow()
                   .getMapValue();
-          logger.info("Gateway Service Env Details Routes Map Size: [{}]", ROUTES_MAP.size());
+          logger.debug("Gateway Service Env Details Routes Map Size: [{}]", ROUTES_MAP.size());
 
           AUTH_APPS =
               envDetailsList.stream()
@@ -83,9 +84,9 @@ public class Routes {
                       Collectors.toMap(
                           Map.Entry::getKey,
                           entry -> decryptSecret(entry.getValue(), entry.getKey())));
-          logger.info("Gateway Service Env Details Auth Map Size: [{}]", AUTH_APPS.size());
+          logger.debug("Gateway Service Env Details Auth Map Size: [{}]", AUTH_APPS.size());
         } else {
-          logger.info(
+          logger.error(
               "Failed to Fetch Gateway Service Env Details, Error Response: [{}]",
               envDetailResponse.getErrMsg());
         }
@@ -93,7 +94,7 @@ public class Routes {
         logger.error("Error Retrieving Env Details, Auth Exclusions, Routes Map...", ex);
       }
     } else {
-      logger.info(
+      logger.error(
           "Failed to Fetch Gateway Service Env Details, Response: [{}]", response.statusCode());
     }
   }
