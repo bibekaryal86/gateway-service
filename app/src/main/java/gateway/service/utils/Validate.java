@@ -7,7 +7,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 public class Validate {
   private static final LogLogger logger = LogLogger.getLogger(Validate.class);
 
-  private static final String VALIDATE_TOKEN_API = Common.getSystemEnvProperty(Constants.VALIDATE_TOKEN_URL);
+  private static final String VALIDATE_TOKEN_API =
+      Common.getSystemEnvProperty(Constants.VALIDATE_TOKEN_URL);
 
   public static boolean validateToken(final String tokenToValidate) {
     logger.debug("Validating Token...");

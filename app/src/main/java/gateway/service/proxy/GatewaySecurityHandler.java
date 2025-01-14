@@ -32,8 +32,7 @@ public class GatewaySecurityHandler extends ChannelDuplexHandler {
       }
 
       // check if there is an auth token
-      final String authHeader =
-          fullHttpRequest.headers().get(HttpHeaderNames.AUTHORIZATION);
+      final String authHeader = fullHttpRequest.headers().get(HttpHeaderNames.AUTHORIZATION);
       if (Common.isEmpty(authHeader) || !authHeader.startsWith(Constants.BEARER_AUTH)) {
         logger.error("[{}] Auth Header Missing/Invalid...", gatewayRequestDetails.getRequestId());
         Gateway.sendErrorResponse(
@@ -69,10 +68,11 @@ public class GatewaySecurityHandler extends ChannelDuplexHandler {
         return;
       }
 
-//      fullHttpRequest
-//          .headers()
-//          .set(HttpHeaderNames.AUTHORIZATION, Common.getBasicAuth(appUsername, appPassword));
-//      logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
+      //      fullHttpRequest
+      //          .headers()
+      //          .set(HttpHeaderNames.AUTHORIZATION, Common.getBasicAuth(appUsername,
+      // appPassword));
+      //      logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
     }
 
     super.channelRead(channelHandlerContext, object);
