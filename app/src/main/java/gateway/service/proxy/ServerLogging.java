@@ -86,12 +86,7 @@ public class ServerLogging extends ChannelDuplexHandler {
     try {
       final URL baseUrl = new URI(targetBaseUrl).toURL();
       return new GatewayRequestDetails(
-          requestMethod,
-          requestUri,
-          apiName,
-          clientId,
-          targetBaseUrl,
-          startTime);
+          requestMethod, requestUri, apiName, clientId, targetBaseUrl, startTime);
     } catch (MalformedURLException | URISyntaxException ignored) {
       logger.error(
           "Extract Gateway Request Details Error: [{}],[{}],[{}],[{}],[{}]",
@@ -133,19 +128,19 @@ public class ServerLogging extends ChannelDuplexHandler {
     return requestUri;
   }
 
-//  private String extractHost(final URL url) {
-//    return url.getHost();
-//  }
-//
-//  private int extractPort(final URL url) {
-//    int port = url.getPort();
-//    if (port == -1) {
-//      if (url.getProtocol().equals(Constants.HTTPS_PROTOCOL)) {
-//        port = Constants.HTTPS_DEFAULT_PORT;
-//      } else {
-//        port = Constants.HTTP_DEFAULT_PORT;
-//      }
-//    }
-//    return port;
-//  }
+  //  private String extractHost(final URL url) {
+  //    return url.getHost();
+  //  }
+  //
+  //  private int extractPort(final URL url) {
+  //    int port = url.getPort();
+  //    if (port == -1) {
+  //      if (url.getProtocol().equals(Constants.HTTPS_PROTOCOL)) {
+  //        port = Constants.HTTPS_DEFAULT_PORT;
+  //      } else {
+  //        port = Constants.HTTP_DEFAULT_PORT;
+  //      }
+  //    }
+  //    return port;
+  //  }
 }

@@ -13,11 +13,9 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-
+import io.netty.handler.codec.http.HttpVersion;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import io.netty.handler.codec.http.HttpVersion;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -36,63 +34,66 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
   }
 
   @Override
-  public void channelRead(@NotNull final ChannelHandlerContext ctx, @NotNull final Object msg) throws Exception {
+  public void channelRead(@NotNull final ChannelHandlerContext ctx, @NotNull final Object msg)
+      throws Exception {
     if (msg instanceof FullHttpRequest fullHttpRequest) {
-      final GatewayRequestDetails gatewayRequestDetails = ctx.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
+      final GatewayRequestDetails gatewayRequestDetails =
+          ctx.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
 
       if (gatewayRequestDetails == null) {
-        Gateway.sendErrorResponse(ctx, HttpResponseStatus.BAD_REQUEST, "Gateway Request Details Error...");
+        Gateway.sendErrorResponse(
+            ctx, HttpResponseStatus.BAD_REQUEST, "Gateway Request Details Error...");
         return;
       }
 
-      final boolean isGatewaySvcResponse = Gateway.gatewaySvcResponse(gatewayRequestDetails, ctx, fullHttpRequest);
+      final boolean isGatewaySvcResponse =
+          Gateway.gatewaySvcResponse(gatewayRequestDetails, ctx, fullHttpRequest);
       if (isGatewaySvcResponse) {
         return;
       }
 
       final CircuitBreaker circuitBreaker =
-              circuitBreakers.computeIfAbsent(
-                      gatewayRequestDetails.getApiName(),
-                      key -> new CircuitBreaker(Constants.CB_FAILURE_THRESHOLD, Constants.CB_OPEN_TIMEOUT));
+          circuitBreakers.computeIfAbsent(
+              gatewayRequestDetails.getApiName(),
+              key -> new CircuitBreaker(Constants.CB_FAILURE_THRESHOLD, Constants.CB_OPEN_TIMEOUT));
       if (!circuitBreaker.allowRequest()) {
         logger.error(
-                "[{}] CircuitBreaker Response: [{}]",
-                gatewayRequestDetails.getRequestId(),
-                circuitBreaker);
+            "[{}] CircuitBreaker Response: [{}]",
+            gatewayRequestDetails.getRequestId(),
+            circuitBreaker);
         Gateway.sendErrorResponse(
-                ctx,
-                HttpResponseStatus.SERVICE_UNAVAILABLE,
-                "Maximum Failures Allowed Exceeded...");
+            ctx, HttpResponseStatus.SERVICE_UNAVAILABLE, "Maximum Failures Allowed Exceeded...");
         return;
       }
 
       RateLimiter rateLimiter =
-              rateLimiters.computeIfAbsent(
-                      gatewayRequestDetails.getClientId(),
-                      key -> new RateLimiter(Constants.RL_MAX_REQUESTS, Constants.RL_TIME_WINDOW_MILLIS));
+          rateLimiters.computeIfAbsent(
+              gatewayRequestDetails.getClientId(),
+              key -> new RateLimiter(Constants.RL_MAX_REQUESTS, Constants.RL_TIME_WINDOW_MILLIS));
       if (!rateLimiter.allowRequest()) {
         logger.error(
-                "[{}] RateLimiter Response: [{}]", gatewayRequestDetails.getRequestId(), rateLimiter);
+            "[{}] RateLimiter Response: [{}]", gatewayRequestDetails.getRequestId(), rateLimiter);
         Gateway.sendErrorResponse(
-                ctx,
-                HttpResponseStatus.TOO_MANY_REQUESTS,
-                "Maximum Request Allowed Exceeded...");
+            ctx, HttpResponseStatus.TOO_MANY_REQUESTS, "Maximum Request Allowed Exceeded...");
         return;
       }
 
       String url = gatewayRequestDetails.getTargetBaseUrl() + gatewayRequestDetails.getRequestUri();
       RequestBody body =
-              fullHttpRequest.content() == null || fullHttpRequest.content().array().length == 0
-                      ? null
-                      : RequestBody.create(fullHttpRequest.content().array(), MediaType.parse("application/json"));
-      Request.Builder requestBuilder = new Request.Builder().url(url).method(fullHttpRequest.method().name(), body);
+          fullHttpRequest.content() == null || fullHttpRequest.content().readableBytes() == 0
+              ? null
+              : RequestBody.create(
+                  fullHttpRequest.content().array(), MediaType.parse("application/json"));
+      Request.Builder requestBuilder =
+          new Request.Builder().url(url).method(fullHttpRequest.method().name(), body);
+      requestBuilder.addHeader(Constants.GATEWAY_REQUEST_DETAILS_KEY.name(), gatewayRequestDetails.getRequestId());
 
       Response response = proxy.proxy(requestBuilder.build());
-      FullHttpResponse nettyResponse = new DefaultFullHttpResponse(
+      FullHttpResponse nettyResponse =
+          new DefaultFullHttpResponse(
               HttpVersion.HTTP_1_1,
               HttpResponseStatus.valueOf(response.code()),
-              Unpooled.copiedBuffer(response.body().bytes())
-      );
+              Unpooled.copiedBuffer(response.body().bytes()));
 
       ctx.writeAndFlush(nettyResponse).addListener(ChannelFutureListener.CLOSE);
     } else {
@@ -107,9 +108,8 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
         channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
     logger.error(
         "[{}] Gateway Request Handler Exception Caught...{}",
-            Common.getRequestId(gatewayRequestDetails),
-        throwable
-        );
+        Common.getRequestId(gatewayRequestDetails),
+        throwable);
 
     Gateway.sendErrorResponse(
         channelHandlerContext,

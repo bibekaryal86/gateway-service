@@ -12,8 +12,8 @@ public class GatewayRequestDetails implements Serializable {
   private final String apiName;
   private final String clientId;
   private final String targetBaseUrl;
-//  private final String targetHost;
-//  private final int targetPort;
+  //  private final String targetHost;
+  //  private final int targetPort;
   private final long startTime;
 
   public GatewayRequestDetails(
@@ -22,8 +22,8 @@ public class GatewayRequestDetails implements Serializable {
       final String apiName,
       final String clientId,
       final String targetBaseUrl,
-//      final String targetHost,
-//      final int targetPort,
+      //      final String targetHost,
+      //      final int targetPort,
       final long startTime) {
     this.requestId = UUID.randomUUID().toString();
     this.requestMethod = requestMethod;
@@ -32,8 +32,8 @@ public class GatewayRequestDetails implements Serializable {
     this.requestUriLessApiName = this.setRequestUriLessApiName(requestUri, apiName);
     this.clientId = clientId;
     this.targetBaseUrl = targetBaseUrl;
-//    this.targetHost = targetHost;
-//    this.targetPort = targetPort;
+    //    this.targetHost = targetHost;
+    //    this.targetPort = targetPort;
     this.startTime = startTime;
   }
 
@@ -65,13 +65,13 @@ public class GatewayRequestDetails implements Serializable {
     return targetBaseUrl;
   }
 
-//  public String getTargetHost() {
-//    return targetHost;
-//  }
-//
-//  public int getTargetPort() {
-//    return targetPort;
-//  }
+  //  public String getTargetHost() {
+  //    return targetHost;
+  //  }
+  //
+  //  public int getTargetPort() {
+  //    return targetPort;
+  //  }
 
   public long getStartTime() {
     return startTime;
@@ -85,28 +85,26 @@ public class GatewayRequestDetails implements Serializable {
   @Override
   public String toString() {
     return "GatewayRequestDetails{"
-        //        + "requestId="
-        //        + requestId
-        //        + ", requestMethod="
-        + "requestMethod="
-        + requestMethod
-        + ", requestUri='"
-        + requestUri
+        + "apiName="
         + '\''
-        + ", apiName='"
         + apiName
         + '\''
-        + ", clientId='"
+        + ", requestMethod="
+        + '\''
+        + requestMethod
+        + '\''
+        + ", requestUri="
+        + '\''
+        + requestUri
+        + '\''
+        + ", targetBaseUrl="
+        + '\''
+        + targetBaseUrl
+        + '\''
+        + ", clientId="
+        + '\''
         + clientId
         + '\''
-        + ", targetBaseUrl='"
-        + targetBaseUrl
-//        + '\''
-//        + ", targetHost='"
-//        + targetHost
-//        + '\''
-//        + ", targetPort="
-//        + targetPort
         + '}';
   }
 }

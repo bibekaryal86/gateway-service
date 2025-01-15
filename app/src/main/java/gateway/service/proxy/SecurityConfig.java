@@ -68,11 +68,10 @@ public class SecurityConfig extends ChannelDuplexHandler {
         return;
       }
 
-            fullHttpRequest
-                .headers()
-                .set(HttpHeaderNames.AUTHORIZATION, Common.getBasicAuth(appUsername,
-       appPassword));
-            logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
+      fullHttpRequest
+          .headers()
+          .set(HttpHeaderNames.AUTHORIZATION, Common.getBasicAuth(appUsername, appPassword));
+      logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
     }
 
     super.channelRead(channelHandlerContext, object);
