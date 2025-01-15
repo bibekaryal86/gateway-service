@@ -64,9 +64,9 @@ public class CircuitBreaker {
     return "CircuitBreaker: [ "
         + "State: "
         + state
-        + "Failure Count: "
+        + ", Failure Count: "
         + FAILURE_COUNT
-        + "Open Timeout: "
+        + ", Open Timeout: "
         + OPEN_TIMEOUT
         + " ]";
   }

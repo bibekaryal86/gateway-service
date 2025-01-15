@@ -12,8 +12,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import org.jetbrains.annotations.NotNull;
 
-public class GatewaySecurityHandler extends ChannelDuplexHandler {
-  private static final LogLogger logger = LogLogger.getLogger(GatewaySecurityHandler.class);
+public class SecurityConfig extends ChannelDuplexHandler {
+  private static final LogLogger logger = LogLogger.getLogger(SecurityConfig.class);
 
   @Override
   public void channelRead(

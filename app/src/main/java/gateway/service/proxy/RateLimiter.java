@@ -36,7 +36,7 @@ public class RateLimiter {
     return "RateLimiter: [ "
         + "Request Count: "
         + REQUEST_COUNT
-        + "Last Request Time: "
+        + ", Last Request Time: "
         + new Date(LAST_REQUEST_TIME.get())
         + " ]";
   }

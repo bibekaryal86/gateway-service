@@ -52,9 +52,9 @@ public class NettyServer {
                                       HttpMethod.OPTIONS)
                                   .allowedRequestHeaders("Content-Type", "Authorization")
                                   .build()))
-                      .addLast(new GatewayLoggingHandler())
-                      .addLast(new GatewaySecurityHandler())
-                      .addLast(new GatewayRequestHandler(workerGroup));
+                      .addLast(new ServerLogging())
+                      .addLast(new SecurityConfig())
+                      .addLast(new ProxyHandler());
                 }
               });
 
