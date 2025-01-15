@@ -23,6 +23,7 @@ public class Routes {
   private static Map<String, String> ROUTES_MAP = new HashMap<>();
   private static List<String> AUTH_EXCLUSIONS = new ArrayList<>();
   private static Map<String, String> AUTH_APPS = new HashMap<>();
+  private static List<String> PROXY_HEADERS = new ArrayList<>();
 
   private static final String ROUTE_API_URL = Common.getSystemEnvProperty(Constants.ROUTES_MAP_URL);
   private static final String ROUTE_API_AUTH =
@@ -85,6 +86,15 @@ public class Routes {
                           Map.Entry::getKey,
                           entry -> decryptSecret(entry.getValue(), entry.getKey())));
           logger.debug("Gateway Service Env Details Auth Map Size: [{}]", AUTH_APPS.size());
+
+          PROXY_HEADERS =
+              envDetailsList.stream()
+                  .filter(envDetail -> envDetail.getName().equals(Constants.PROXY_HEADERS))
+                  .findFirst()
+                  .orElseThrow()
+                  .getListValue();
+          logger.debug(
+              "Gateway Service Env Details Proxy Headers List Size: [{}]", PROXY_HEADERS.size());
         } else {
           logger.error(
               "Failed to Fetch Gateway Service Env Details, Error Response: [{}]",
@@ -118,6 +128,11 @@ public class Routes {
 
   public static Map<String, String> getAuthApps() {
     return AUTH_APPS;
+  }
+
+  public static List<String> getProxyHeaders() {
+    logger.info("{}}", PROXY_HEADERS);
+    return PROXY_HEADERS;
   }
 
   // Refresh routes periodically

@@ -1,9 +1,8 @@
 package gateway.service.proxy;
 
 import gateway.service.logging.LogLogger;
-import java.io.IOException;
-
 import gateway.service.utils.Constants;
+import java.io.IOException;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;

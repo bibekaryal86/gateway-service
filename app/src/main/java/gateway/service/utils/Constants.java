@@ -32,15 +32,13 @@ public class Constants {
   public static final String AUTH_APPS_NAME = "AUTH_APPS";
   public static final String AUTH_EXCLUSIONS_NAME = "AUTH_EXCLUSIONS_ENDS_WITH";
   public static final String BASE_URLS_NAME_BEGINS_WITH = "BASE_URLS";
+  public static final String PROXY_HEADERS = "PROXY_HEADERS";
 
   // OTHERS
   public static final String THIS_APP_NAME = "gatewaysvc";
   public static final String ENV_PORT_DEFAULT = "8000";
   public static final String PRODUCTION_ENV = "PRODUCTION";
   public static final String CONTENT_TYPE_JSON = "application/json";
-  public static final String HTTPS_PROTOCOL = "https";
-  public static final int HTTPS_DEFAULT_PORT = 443;
-  public static final int HTTP_DEFAULT_PORT = 80;
 
   public static final String BEARER_AUTH = "Bearer ";
   public static final String AUTH_APPS_USR = "_usr";
