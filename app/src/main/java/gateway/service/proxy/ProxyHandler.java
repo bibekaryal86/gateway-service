@@ -98,6 +98,10 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
         }
         fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
         ctx.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
+      } catch (Exception ex) {
+        logger.error("[{}] Proxy Handler Error: {}", ex);
+        Gateway.sendErrorResponse(
+                ctx, HttpResponseStatus.BAD_GATEWAY, "Proxy Handler Error...");
       }
     } else {
       super.channelRead(ctx, msg);
@@ -110,14 +114,14 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
     final GatewayRequestDetails gatewayRequestDetails =
         channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
     logger.error(
-        "[{}] Gateway Request Handler Exception Caught...{}",
+        "[{}] Proxy Handler Exception Caught...{}",
         Common.getRequestId(gatewayRequestDetails),
         throwable);
 
     Gateway.sendErrorResponse(
         channelHandlerContext,
         HttpResponseStatus.INTERNAL_SERVER_ERROR,
-        "Gateway Request Handler Exception...");
+        "Proxy Handler Exception...");
   }
 
   private Request getProxyRequest(
