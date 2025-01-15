@@ -65,10 +65,11 @@ public class ServerLogging extends ChannelDuplexHandler {
       GatewayRequestDetails gatewayRequestDetails =
           channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
       logger.info(
-          "[{}] Response: [{}], [{}]",
+          "[{}] Response: [{}], [{}] in [{}s]",
           Common.getRequestId(gatewayRequestDetails),
           responseStatus,
-          responseContentLength);
+          responseContentLength,
+          String.format("%.2f", (System.nanoTime() - gatewayRequestDetails.getStartTime()) / 1e9d));
     }
     super.write(channelHandlerContext, object, channelPromise);
   }
@@ -80,6 +81,7 @@ public class ServerLogging extends ChannelDuplexHandler {
     final String apiName = extractApiName(requestUri);
     final String clientId = extractClientId(channelHandlerContext);
     final String targetBaseUrl = Routes.getTargetBaseUrl(apiName);
+    final long startTime = System.nanoTime();
 
     try {
       final URL baseUrl = new URI(targetBaseUrl).toURL();
@@ -89,8 +91,7 @@ public class ServerLogging extends ChannelDuplexHandler {
           apiName,
           clientId,
           targetBaseUrl,
-          extractHost(baseUrl),
-          extractPort(baseUrl));
+          startTime);
     } catch (MalformedURLException | URISyntaxException ignored) {
       logger.error(
           "Extract Gateway Request Details Error: [{}],[{}],[{}],[{}],[{}]",
@@ -132,19 +133,19 @@ public class ServerLogging extends ChannelDuplexHandler {
     return requestUri;
   }
 
-  private String extractHost(final URL url) {
-    return url.getHost();
-  }
-
-  private int extractPort(final URL url) {
-    int port = url.getPort();
-    if (port == -1) {
-      if (url.getProtocol().equals(Constants.HTTPS_PROTOCOL)) {
-        port = Constants.HTTPS_DEFAULT_PORT;
-      } else {
-        port = Constants.HTTP_DEFAULT_PORT;
-      }
-    }
-    return port;
-  }
+//  private String extractHost(final URL url) {
+//    return url.getHost();
+//  }
+//
+//  private int extractPort(final URL url) {
+//    int port = url.getPort();
+//    if (port == -1) {
+//      if (url.getProtocol().equals(Constants.HTTPS_PROTOCOL)) {
+//        port = Constants.HTTPS_DEFAULT_PORT;
+//      } else {
+//        port = Constants.HTTP_DEFAULT_PORT;
+//      }
+//    }
+//    return port;
+//  }
 }

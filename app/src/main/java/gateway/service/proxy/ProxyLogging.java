@@ -22,7 +22,7 @@ public class ProxyLogging implements Interceptor {
         Response response = chain.proceed(request);
         long endTime = System.nanoTime();
 
-        logger.info("OkHttp Response: [{}] [{}] [{}] [{}] [{}]", request.method(), request.url(), response.code(), (endTime - startTime) / 1e6d);
+        logger.info("OkHttp Response: [{}] [{}] [{}] in [{}s]", request.method(), request.url(), response.code(), String.format("%.2f", (endTime - startTime) / 1e9d));
         return response;
     }
 }

@@ -5,15 +5,16 @@ import java.io.Serializable;
 import java.util.UUID;
 
 public class GatewayRequestDetails implements Serializable {
-  private final UUID requestId;
+  private final String requestId;
   private final HttpMethod requestMethod;
   private final String requestUri;
   private final String requestUriLessApiName;
   private final String apiName;
   private final String clientId;
   private final String targetBaseUrl;
-  private final String targetHost;
-  private final Integer targetPort;
+//  private final String targetHost;
+//  private final int targetPort;
+  private final long startTime;
 
   public GatewayRequestDetails(
       final HttpMethod requestMethod,
@@ -21,20 +22,22 @@ public class GatewayRequestDetails implements Serializable {
       final String apiName,
       final String clientId,
       final String targetBaseUrl,
-      final String targetHost,
-      final Integer targetPort) {
-    this.requestId = UUID.randomUUID();
+//      final String targetHost,
+//      final int targetPort,
+      final long startTime) {
+    this.requestId = UUID.randomUUID().toString();
     this.requestMethod = requestMethod;
     this.requestUri = requestUri;
     this.apiName = apiName;
     this.requestUriLessApiName = this.setRequestUriLessApiName(requestUri, apiName);
     this.clientId = clientId;
     this.targetBaseUrl = targetBaseUrl;
-    this.targetHost = targetHost;
-    this.targetPort = targetPort;
+//    this.targetHost = targetHost;
+//    this.targetPort = targetPort;
+    this.startTime = startTime;
   }
 
-  public UUID getRequestId() {
+  public String getRequestId() {
     return requestId;
   }
 
@@ -62,12 +65,16 @@ public class GatewayRequestDetails implements Serializable {
     return targetBaseUrl;
   }
 
-  public String getTargetHost() {
-    return targetHost;
-  }
+//  public String getTargetHost() {
+//    return targetHost;
+//  }
+//
+//  public int getTargetPort() {
+//    return targetPort;
+//  }
 
-  public Integer getTargetPort() {
-    return targetPort;
+  public long getStartTime() {
+    return startTime;
   }
 
   // transform /gatewaysvc/tests/api to /tests/api
@@ -94,12 +101,12 @@ public class GatewayRequestDetails implements Serializable {
         + '\''
         + ", targetBaseUrl='"
         + targetBaseUrl
-        + '\''
-        + ", targetHost='"
-        + targetHost
-        + '\''
-        + ", targetPort="
-        + targetPort
+//        + '\''
+//        + ", targetHost='"
+//        + targetHost
+//        + '\''
+//        + ", targetPort="
+//        + targetPort
         + '}';
   }
 }
