@@ -1,6 +1,7 @@
 package gateway.service.proxy;
 
 import gateway.service.logging.LogLogger;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpResponse;
@@ -22,7 +23,7 @@ public class GatewayResponseHandler extends SimpleChannelInboundHandler<FullHttp
       final ChannelHandlerContext channelHandlerContext /* unused */,
       final FullHttpResponse fullHttpResponse)
       throws Exception {
-    channelHandlerContextClient.writeAndFlush(fullHttpResponse);
+    channelHandlerContextClient.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
   }
 
   @Override
