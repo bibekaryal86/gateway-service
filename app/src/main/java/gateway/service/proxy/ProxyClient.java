@@ -16,7 +16,7 @@ public class ProxyClient {
             .readTimeout(15, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)
             .connectionPool(new ConnectionPool(10, 5, TimeUnit.MINUTES))
-            .addInterceptor(new ProxyLogging())
+            .addInterceptor(new ProxyInterceptor())
             .build();
   }
 

@@ -12,8 +12,7 @@ public class GatewayRequestDetails implements Serializable {
   private final String apiName;
   private final String clientId;
   private final String targetBaseUrl;
-  //  private final String targetHost;
-  //  private final int targetPort;
+
   private final long startTime;
 
   public GatewayRequestDetails(
@@ -22,8 +21,6 @@ public class GatewayRequestDetails implements Serializable {
       final String apiName,
       final String clientId,
       final String targetBaseUrl,
-      //      final String targetHost,
-      //      final int targetPort,
       final long startTime) {
     this.requestId = UUID.randomUUID().toString();
     this.requestMethod = requestMethod;
@@ -32,8 +29,6 @@ public class GatewayRequestDetails implements Serializable {
     this.requestUriLessApiName = this.setRequestUriLessApiName(requestUri, apiName);
     this.clientId = clientId;
     this.targetBaseUrl = targetBaseUrl;
-    //    this.targetHost = targetHost;
-    //    this.targetPort = targetPort;
     this.startTime = startTime;
   }
 
@@ -64,14 +59,6 @@ public class GatewayRequestDetails implements Serializable {
   public String getTargetBaseUrl() {
     return targetBaseUrl;
   }
-
-  //  public String getTargetHost() {
-  //    return targetHost;
-  //  }
-  //
-  //  public int getTargetPort() {
-  //    return targetPort;
-  //  }
 
   public long getStartTime() {
     return startTime;

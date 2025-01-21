@@ -8,8 +8,8 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
 
-public class ProxyLogging implements Interceptor {
-  private static final LogLogger logger = LogLogger.getLogger(ProxyLogging.class);
+public class ProxyInterceptor implements Interceptor {
+  private static final LogLogger logger = LogLogger.getLogger(ProxyInterceptor.class);
 
   @NotNull
   @Override

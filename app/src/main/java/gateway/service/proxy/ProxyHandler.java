@@ -82,26 +82,25 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
         return;
       }
 
-      try (Response response = proxy.proxy(getProxyRequest(gatewayRequestDetails, fullHttpRequest))) {
+      try (Response response =
+          proxy.proxy(getProxyRequest(gatewayRequestDetails, fullHttpRequest))) {
         FullHttpResponse fullHttpResponse;
         if (response.body() == null) {
           fullHttpResponse =
-                  new DefaultFullHttpResponse(
-                          HttpVersion.HTTP_1_1,
-                          HttpResponseStatus.valueOf(response.code()));
+              new DefaultFullHttpResponse(
+                  HttpVersion.HTTP_1_1, HttpResponseStatus.valueOf(response.code()));
         } else {
           fullHttpResponse =
-                  new DefaultFullHttpResponse(
-                          HttpVersion.HTTP_1_1,
-                          HttpResponseStatus.valueOf(response.code()),
-                          Unpooled.copiedBuffer(response.body().bytes()));
+              new DefaultFullHttpResponse(
+                  HttpVersion.HTTP_1_1,
+                  HttpResponseStatus.valueOf(response.code()),
+                  Unpooled.copiedBuffer(response.body().bytes()));
         }
         fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON);
         ctx.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
       } catch (Exception ex) {
         logger.error("[{}] Proxy Handler Error: {}", ex);
-        Gateway.sendErrorResponse(
-                ctx, HttpResponseStatus.BAD_GATEWAY, "Proxy Handler Error...");
+        Gateway.sendErrorResponse(ctx, HttpResponseStatus.BAD_GATEWAY, "Proxy Handler Error...");
       }
     } else {
       super.channelRead(ctx, msg);
