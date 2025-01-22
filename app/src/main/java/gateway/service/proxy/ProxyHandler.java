@@ -6,6 +6,7 @@ import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
 import gateway.service.utils.Routes;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -102,7 +103,7 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
             .set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
         ctx.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
       } catch (Exception ex) {
-        logger.error("[{}] Proxy Handler Error: {}", ex);
+        logger.error("[{}] Proxy Handler Error...", ex, gatewayRequestDetails.getRequestId());
         Gateway.sendErrorResponse(ctx, HttpResponseStatus.BAD_GATEWAY, "Proxy Handler Error...");
       }
     } else {
@@ -134,7 +135,7 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
         fullHttpRequest.content() == null || fullHttpRequest.content().readableBytes() == 0
             ? null
             : RequestBody.create(
-                fullHttpRequest.content().array(),
+                ByteBufUtil.getBytes(fullHttpRequest.content()),
                 MediaType.parse(HttpHeaderValues.APPLICATION_JSON.toString()));
 
     final Headers.Builder headersBuilder = new Headers.Builder();

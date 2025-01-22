@@ -56,7 +56,7 @@ public class LogLogger {
   private void log(final Level level, final String message, final Throwable throwable) {
     logger.log(level, message);
     if (throwable != null) {
-      logger.log(level, "Exception: ", throwable);
+      logger.log(level, logThrowable(throwable));
     }
   }
 
@@ -111,5 +111,13 @@ public class LogLogger {
 
   private static boolean isDebugEnabled() {
     return CURRENT_LOG_LEVEL.get() == Level.FINE;
+  }
+
+  private static String logThrowable(final Throwable exception) {
+    StringBuilder buf = new StringBuilder();
+    for (StackTraceElement element : exception.getStackTrace()) {
+      buf.append(element).append("\n");
+    }
+    return buf.toString();
   }
 }
