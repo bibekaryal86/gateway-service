@@ -11,6 +11,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
@@ -40,18 +41,7 @@ public class NettyServer {
                       .pipeline()
                       .addLast(new HttpServerCodec())
                       .addLast(new HttpObjectAggregator(Constants.MAX_CONTENT_LENGTH))
-                      .addLast(
-                          new CorsHandler(
-                              CorsConfigBuilder.forAnyOrigin()
-                                  .allowedRequestMethods(
-                                      HttpMethod.GET,
-                                      HttpMethod.POST,
-                                      HttpMethod.PUT,
-                                      HttpMethod.PATCH,
-                                      HttpMethod.DELETE,
-                                      HttpMethod.OPTIONS)
-                                  .allowedRequestHeaders("Content-Type", "Authorization")
-                                  .build()))
+                      .addLast(Common.newCorsHandler())
                       .addLast(new ServerLogging())
                       .addLast(new SecurityConfig())
                       .addLast(new ProxyHandler());

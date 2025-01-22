@@ -22,6 +22,7 @@ public class Routes {
   private static Timer timer;
   private static Map<String, String> ROUTES_MAP = new HashMap<>();
   private static List<String> AUTH_EXCLUSIONS = new ArrayList<>();
+  private static List<String> BASIC_AUTH_APIS = new ArrayList<>();
   private static Map<String, String> AUTH_APPS = new HashMap<>();
   private static List<String> PROXY_HEADERS = new ArrayList<>();
 
@@ -53,8 +54,18 @@ public class Routes {
                   .orElseThrow()
                   .getListValue();
           logger.debug(
-              "Gateway Service Env Details Auth Exclusions List Size: [{}]",
+              "Gateway Service Env Details Auth Exclusions Size: [{}]",
               AUTH_EXCLUSIONS.size());
+
+          BASIC_AUTH_APIS =
+                  envDetailsList.stream()
+                          .filter(envDetail -> envDetail.getName().equals(Constants.BASIC_AUTH_NAME))
+                          .findFirst()
+                          .orElseThrow()
+                          .getListValue();
+          logger.debug(
+                  "Gateway Service Env Details Basic Auth Apis Size: [{}]",
+                  BASIC_AUTH_APIS.size());
 
           ROUTES_MAP =
               envDetailsList.stream()
@@ -94,7 +105,7 @@ public class Routes {
                   .orElseThrow()
                   .getListValue();
           logger.debug(
-              "Gateway Service Env Details Proxy Headers List Size: [{}]", PROXY_HEADERS.size());
+              "Gateway Service Env Details Proxy Headers Size: [{}]", PROXY_HEADERS.size());
         } else {
           logger.error(
               "Failed to Fetch Gateway Service Env Details, Error Response: [{}]",
@@ -124,6 +135,10 @@ public class Routes {
 
   public static List<String> getAuthExclusions() {
     return AUTH_EXCLUSIONS;
+  }
+
+  public static List<String> getBasicAuthApis() {
+    return BASIC_AUTH_APIS;
   }
 
   public static Map<String, String> getAuthApps() {
