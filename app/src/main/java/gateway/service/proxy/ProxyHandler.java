@@ -97,7 +97,9 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
                   HttpResponseStatus.valueOf(response.code()),
                   Unpooled.copiedBuffer(response.body().bytes()));
         }
-        fullHttpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
+        fullHttpResponse
+            .headers()
+            .set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
         ctx.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
       } catch (Exception ex) {
         logger.error("[{}] Proxy Handler Error: {}", ex);
@@ -132,7 +134,8 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
         fullHttpRequest.content() == null || fullHttpRequest.content().readableBytes() == 0
             ? null
             : RequestBody.create(
-                fullHttpRequest.content().array(), MediaType.parse(HttpHeaderValues.APPLICATION_JSON.toString()));
+                fullHttpRequest.content().array(),
+                MediaType.parse(HttpHeaderValues.APPLICATION_JSON.toString()));
 
     final Headers.Builder headersBuilder = new Headers.Builder();
     final List<String> proxyHeaders = Routes.getProxyHeaders();

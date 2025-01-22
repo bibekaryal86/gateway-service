@@ -54,18 +54,16 @@ public class Routes {
                   .orElseThrow()
                   .getListValue();
           logger.debug(
-              "Gateway Service Env Details Auth Exclusions Size: [{}]",
-              AUTH_EXCLUSIONS.size());
+              "Gateway Service Env Details Auth Exclusions Size: [{}]", AUTH_EXCLUSIONS.size());
 
           BASIC_AUTH_APIS =
-                  envDetailsList.stream()
-                          .filter(envDetail -> envDetail.getName().equals(Constants.BASIC_AUTH_NAME))
-                          .findFirst()
-                          .orElseThrow()
-                          .getListValue();
+              envDetailsList.stream()
+                  .filter(envDetail -> envDetail.getName().equals(Constants.BASIC_AUTH_NAME))
+                  .findFirst()
+                  .orElseThrow()
+                  .getListValue();
           logger.debug(
-                  "Gateway Service Env Details Basic Auth Apis Size: [{}]",
-                  BASIC_AUTH_APIS.size());
+              "Gateway Service Env Details Basic Auth Apis Size: [{}]", BASIC_AUTH_APIS.size());
 
           ROUTES_MAP =
               envDetailsList.stream()

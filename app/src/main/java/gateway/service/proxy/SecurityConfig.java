@@ -25,9 +25,12 @@ public class SecurityConfig extends ChannelDuplexHandler {
 
       // check if uri is excluded from auth requirements or not needed to modify
       if (Routes.getAuthExclusions().stream()
-          .anyMatch(gatewayRequestDetails.getRequestUriLessApiName()::startsWith)
-              || Routes.getBasicAuthApis().stream().anyMatch(gatewayRequestDetails.getRequestUri()::startsWith)) {
-        logger.debug("[{}] Excluded From Authorization Modification...", gatewayRequestDetails.getRequestId());
+              .anyMatch(gatewayRequestDetails.getRequestUriLessApiName()::startsWith)
+          || Routes.getBasicAuthApis().stream()
+              .anyMatch(gatewayRequestDetails.getRequestUri()::startsWith)) {
+        logger.debug(
+            "[{}] Excluded From Authorization Modification...",
+            gatewayRequestDetails.getRequestId());
         super.channelRead(channelHandlerContext, fullHttpRequest);
         return;
       }
@@ -41,11 +44,12 @@ public class SecurityConfig extends ChannelDuplexHandler {
         final int authHeaderAppId = Common.parseIntNoEx(authAppId);
 
         if (authHeaderAppId <= 0) {
-          logger.error("[{}] AppId Header Missing/Invalid...", gatewayRequestDetails.getRequestId());
+          logger.error(
+              "[{}] AppId Header Missing/Invalid...", gatewayRequestDetails.getRequestId());
           Gateway.sendErrorResponse(
-                  channelHandlerContext,
-                  HttpResponseStatus.UNAUTHORIZED,
-                  "Missing or Malformed AppId Header");
+              channelHandlerContext,
+              HttpResponseStatus.UNAUTHORIZED,
+              "Missing or Malformed AppId Header");
           return;
         }
 
@@ -57,9 +61,9 @@ public class SecurityConfig extends ChannelDuplexHandler {
         if (Common.isEmpty(authHeader) || !authHeader.startsWith(Constants.BEARER_AUTH)) {
           logger.error("[{}] Auth Header Missing/Invalid...", gatewayRequestDetails.getRequestId());
           Gateway.sendErrorResponse(
-                  channelHandlerContext,
-                  HttpResponseStatus.UNAUTHORIZED,
-                  "Missing or Malformed Authorization Header");
+              channelHandlerContext,
+              HttpResponseStatus.UNAUTHORIZED,
+              "Missing or Malformed Authorization Header");
           return;
         }
 
@@ -68,7 +72,9 @@ public class SecurityConfig extends ChannelDuplexHandler {
         if (!isValid) {
           logger.error("[{}] Auth Token Not Valid...", gatewayRequestDetails.getRequestId());
           Gateway.sendErrorResponse(
-                  channelHandlerContext, HttpResponseStatus.UNAUTHORIZED, "Invalid Authorization Header");
+              channelHandlerContext,
+              HttpResponseStatus.UNAUTHORIZED,
+              "Invalid Authorization Header");
           return;
         }
       }

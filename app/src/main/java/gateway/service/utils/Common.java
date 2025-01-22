@@ -7,7 +7,6 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.codec.http.cors.CorsHandler;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collection;
@@ -122,19 +121,20 @@ public class Common {
 
   public static CorsHandler newCorsHandler() {
     return new CorsHandler(
-            CorsConfigBuilder.forAnyOrigin()
-                    .allowedRequestMethods(
-                            HttpMethod.GET,
-                            HttpMethod.POST,
-                            HttpMethod.PUT,
-                            HttpMethod.PATCH,
-                            HttpMethod.DELETE,
-                            HttpMethod.OPTIONS)
-                    .allowedRequestHeaders(HttpHeaderNames.AUTHORIZATION,
-                            HttpHeaderNames.CONTENT_TYPE,
-                            HttpHeaderNames.CONTENT_LENGTH,
-                            "X-Authorization-AppId")
-                    .build());
+        CorsConfigBuilder.forAnyOrigin()
+            .allowedRequestMethods(
+                HttpMethod.GET,
+                HttpMethod.POST,
+                HttpMethod.PUT,
+                HttpMethod.PATCH,
+                HttpMethod.DELETE,
+                HttpMethod.OPTIONS)
+            .allowedRequestHeaders(
+                HttpHeaderNames.AUTHORIZATION,
+                HttpHeaderNames.CONTENT_TYPE,
+                HttpHeaderNames.CONTENT_LENGTH,
+                "X-Authorization-AppId")
+            .build());
   }
 
   public static int parseIntNoEx(final String value) {

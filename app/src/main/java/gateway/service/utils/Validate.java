@@ -14,7 +14,7 @@ public class Validate {
     logger.debug("Validating Token...");
     final String validateTokenApiUrl = String.format(VALIDATE_TOKEN_API, appIdToValidate);
     return Connector.sendRequest(
-                    validateTokenApiUrl, HttpMethod.GET.name(), "", null, tokenToValidate)
+                validateTokenApiUrl, HttpMethod.GET.name(), "", null, tokenToValidate)
             .statusCode()
         == HttpResponseStatus.OK.code();
   }
