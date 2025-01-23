@@ -45,9 +45,9 @@ public class LogHandler extends Handler {
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      System.err.println("LogHandler close Error: " + e.getMessage());
+      System.err.println("LogHandler close Error1: " + e.getMessage());
     } catch (Exception e) {
-      System.err.println("LogHandler close Error: " + e.getMessage());
+      System.err.println("LogHandler close Error2: " + e.getMessage());
     }
   }
 
