@@ -91,6 +91,14 @@ public class Common {
     return OBJECT_MAPPER;
   }
 
+  public static String writeValueAsStringNoEx(final Object value) {
+    try {
+      return objectMapperProvider().writeValueAsString(value);
+    } catch (Exception ignored) {
+      return value.toString();
+    }
+  }
+
   public static Level transformLogLevel(final String logLevel) {
     switch (logLevel) {
       case "DEBUG" -> {

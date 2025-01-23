@@ -14,6 +14,7 @@ import okhttp3.Response;
 public class Connector {
   private static final LogLogger logger = LogLogger.getLogger(Connector.class);
 
+  // also see ProxyClient
   private static final OkHttpClient okHttpClient =
       new OkHttpClient.Builder()
           .connectTimeout(5, TimeUnit.SECONDS)

@@ -1,3 +1,1 @@
 # gateway-service
-
-* use ResponseMetadata
