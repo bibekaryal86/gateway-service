@@ -86,6 +86,13 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
 
       try (Response response =
           proxy.proxy(getProxyRequest(gatewayRequestDetails, fullHttpRequest))) {
+
+        if (response.code() > 199 && response.code() < 300) {
+          circuitBreaker.markSuccess();
+        } else {
+          circuitBreaker.markFailure();
+        }
+
         FullHttpResponse fullHttpResponse;
         if (response.body() == null) {
           fullHttpResponse =
@@ -103,6 +110,7 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
             .set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
         ctx.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
       } catch (Exception ex) {
+        circuitBreaker.markFailure();
         logger.error("[{}] Proxy Handler Error...", ex, gatewayRequestDetails.getRequestId());
         Gateway.sendErrorResponse(ctx, HttpResponseStatus.BAD_GATEWAY, "Proxy Handler Error...");
       }
