@@ -34,7 +34,7 @@ public class ServerLogging extends ChannelDuplexHandler {
       final String requestContentLength =
           fullHttpRequest.headers().get(HttpHeaderNames.CONTENT_LENGTH, "0");
       logger.info(
-          "[{}] Request: [{}], [{}]",
+          "[{}] Request IN: [{}], [{}]",
           gatewayRequestDetails.getRequestId(),
           gatewayRequestDetails,
           requestContentLength);
@@ -61,7 +61,7 @@ public class ServerLogging extends ChannelDuplexHandler {
       GatewayRequestDetails gatewayRequestDetails =
           channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
       logger.info(
-          "[{}] Response: [{}], [{}] in [{}s]",
+          "[{}] Response OUT: [{}], [{}] in [{}s]",
           Common.getRequestId(gatewayRequestDetails),
           responseStatus,
           responseContentLength,

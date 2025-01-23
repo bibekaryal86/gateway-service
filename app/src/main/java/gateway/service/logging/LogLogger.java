@@ -1,5 +1,6 @@
 package gateway.service.logging;
 
+import gateway.service.utils.Common;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -115,6 +116,12 @@ public class LogLogger {
 
   private static String logThrowable(final Throwable exception) {
     StringBuilder buf = new StringBuilder();
+
+    if (Common.isEmpty(exception.getMessage())) {
+      buf.append("No Exception Message").append("\n");
+    } else {
+      buf.append(exception.getMessage()).append("\n");
+    }
     for (StackTraceElement element : exception.getStackTrace()) {
       buf.append(element).append("\n");
     }

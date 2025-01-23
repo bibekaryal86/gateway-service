@@ -24,13 +24,18 @@ public class SecurityConfig extends ChannelDuplexHandler {
           channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
 
       // check if uri is excluded from auth requirements or not needed to modify
-      if (Routes.getAuthExclusions().stream()
-              .anyMatch(gatewayRequestDetails.getRequestUriLessApiName()::startsWith)
-          || Routes.getBasicAuthApis().stream()
-              .anyMatch(gatewayRequestDetails.getRequestUri()::startsWith)) {
+      final boolean isNoAuth =
+          Routes.getAuthExclusions().stream()
+              .anyMatch(gatewayRequestDetails.getRequestUriLessApiName()::startsWith);
+      final boolean isBasicAuth =
+          Routes.getBasicAuthApis().stream()
+              .anyMatch(gatewayRequestDetails.getRequestUri()::startsWith);
+
+      if (isNoAuth || isBasicAuth) {
         logger.debug(
-            "[{}] Excluded From Authorization Modification...",
-            gatewayRequestDetails.getRequestId());
+            "[{}] Excluded From Authorization Modification for NoAuth=[{}]...",
+            gatewayRequestDetails.getRequestId(),
+            isNoAuth);
         super.channelRead(channelHandlerContext, fullHttpRequest);
         return;
       }
@@ -80,24 +85,27 @@ public class SecurityConfig extends ChannelDuplexHandler {
       }
 
       // update request with basic auth after token validated
-      String appUsername =
-          Routes.getAuthApps().get(gatewayRequestDetails.getApiName() + Constants.AUTH_APPS_USR);
-      String appPassword =
-          Routes.getAuthApps().get(gatewayRequestDetails.getApiName() + Constants.AUTH_APPS_PWD);
+      // do not do it for authsvc, because that expects the bearer token
+      if (!gatewayRequestDetails.getApiName().equals(Constants.API_NAME_AUTH_SERVICE)) {
+        String appUsername =
+            Routes.getAuthApps().get(gatewayRequestDetails.getApiName() + Constants.AUTH_APPS_USR);
+        String appPassword =
+            Routes.getAuthApps().get(gatewayRequestDetails.getApiName() + Constants.AUTH_APPS_PWD);
 
-      if (Common.isEmpty(appUsername) || Common.isEmpty(appPassword)) {
-        logger.error("[{}] Auth Credentials Not Found...", gatewayRequestDetails.getRequestId());
-        Gateway.sendErrorResponse(
-            channelHandlerContext,
-            HttpResponseStatus.NETWORK_AUTHENTICATION_REQUIRED,
-            "Missing Auth Credentials");
-        return;
+        if (Common.isEmpty(appUsername) || Common.isEmpty(appPassword)) {
+          logger.error("[{}] Auth Credentials Not Found...", gatewayRequestDetails.getRequestId());
+          Gateway.sendErrorResponse(
+              channelHandlerContext,
+              HttpResponseStatus.NETWORK_AUTHENTICATION_REQUIRED,
+              "Missing Auth Credentials");
+          return;
+        }
+
+        fullHttpRequest
+            .headers()
+            .set(HttpHeaderNames.AUTHORIZATION, Common.getBasicAuth(appUsername, appPassword));
+        logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
       }
-
-      fullHttpRequest
-          .headers()
-          .set(HttpHeaderNames.AUTHORIZATION, Common.getBasicAuth(appUsername, appPassword));
-      logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
     }
 
     super.channelRead(channelHandlerContext, object);
