@@ -46,64 +46,11 @@ public class Routes {
 
         if (Common.isEmpty(envDetailResponse.getErrMsg())) {
           List<EnvDetailsResponse.EnvDetails> envDetailsList = envDetailResponse.getEnvDetails();
-
-          AUTH_EXCLUSIONS =
-              envDetailsList.stream()
-                  .filter(envDetail -> envDetail.getName().equals(Constants.AUTH_EXCLUSIONS_NAME))
-                  .findFirst()
-                  .orElseThrow()
-                  .getListValue();
-          logger.debug(
-              "Gateway Service Env Details Auth Exclusions Size: [{}]", AUTH_EXCLUSIONS.size());
-
-          BASIC_AUTH_APIS =
-              envDetailsList.stream()
-                  .filter(envDetail -> envDetail.getName().equals(Constants.BASIC_AUTH_NAME))
-                  .findFirst()
-                  .orElseThrow()
-                  .getListValue();
-          logger.debug(
-              "Gateway Service Env Details Basic Auth Apis Size: [{}]", BASIC_AUTH_APIS.size());
-
-          ROUTES_MAP =
-              envDetailsList.stream()
-                  .filter(
-                      envDetail ->
-                          envDetail
-                              .getName()
-                              .equals(
-                                  String.format(
-                                      "%s_%s",
-                                      Constants.BASE_URLS_NAME_BEGINS_WITH,
-                                      Common.getSystemEnvProperty(Constants.SPRING_PROFILES_ACTIVE)
-                                          .toUpperCase())))
-                  .findFirst()
-                  .orElseThrow()
-                  .getMapValue();
-          logger.debug("Gateway Service Env Details Routes Map Size: [{}]", ROUTES_MAP.size());
-
-          AUTH_APPS =
-              envDetailsList.stream()
-                  .filter(envDetail -> envDetail.getName().equals(Constants.AUTH_APPS_NAME))
-                  .findFirst()
-                  .orElseThrow()
-                  .getMapValue()
-                  .entrySet()
-                  .stream()
-                  .collect(
-                      Collectors.toMap(
-                          Map.Entry::getKey,
-                          entry -> decryptSecret(entry.getValue(), entry.getKey())));
-          logger.debug("Gateway Service Env Details Auth Map Size: [{}]", AUTH_APPS.size());
-
-          PROXY_HEADERS =
-              envDetailsList.stream()
-                  .filter(envDetail -> envDetail.getName().equals(Constants.PROXY_HEADERS))
-                  .findFirst()
-                  .orElseThrow()
-                  .getListValue();
-          logger.debug(
-              "Gateway Service Env Details Proxy Headers Size: [{}]", PROXY_HEADERS.size());
+          setAuthExclusions(envDetailsList);
+          setBasicAuthApis(envDetailsList);
+          setRoutesMap(envDetailsList);
+          setAuthApps(envDetailsList);
+          setProxyHeaders(envDetailsList);
         } else {
           logger.error(
               "Failed to Fetch Gateway Service Env Details, Error Response: [{}]",
@@ -172,6 +119,74 @@ public class Routes {
                     timer = null;
                   }
                 }));
+  }
+
+  private static void setAuthExclusions(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
+    AUTH_EXCLUSIONS =
+            envDetailsList.stream()
+                    .filter(envDetail -> envDetail.getName().equals(Constants.AUTH_EXCLUSIONS_NAME))
+                    .findFirst()
+                    .orElseThrow()
+                    .getListValue();
+    logger.debug(
+            "Gateway Service Env Details Auth Exclusions Size: [{}]", AUTH_EXCLUSIONS.size());
+  }
+
+  private static void setBasicAuthApis(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
+    BASIC_AUTH_APIS =
+            envDetailsList.stream()
+                    .filter(envDetail -> envDetail.getName().equals(Constants.BASIC_AUTH_NAME))
+                    .findFirst()
+                    .orElseThrow()
+                    .getListValue();
+    logger.debug(
+            "Gateway Service Env Details Basic Auth Apis Size: [{}]", BASIC_AUTH_APIS.size());
+  }
+
+  private static void setRoutesMap(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
+    ROUTES_MAP =
+            envDetailsList.stream()
+                    .filter(
+                            envDetail ->
+                                    envDetail
+                                            .getName()
+                                            .equals(
+                                                    String.format(
+                                                            "%s_%s",
+                                                            Constants.BASE_URLS_NAME_BEGINS_WITH,
+                                                            Common.getSystemEnvProperty(Constants.SPRING_PROFILES_ACTIVE)
+                                                                    .toUpperCase())))
+                    .findFirst()
+                    .orElseThrow()
+                    .getMapValue();
+    logger.debug("Gateway Service Env Details Routes Map Size: [{}]", ROUTES_MAP.size());
+  }
+
+  private static void setAuthApps(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
+    AUTH_APPS =
+            envDetailsList.stream()
+                    .filter(envDetail -> envDetail.getName().equals(Constants.AUTH_APPS_NAME))
+                    .findFirst()
+                    .orElseThrow()
+                    .getMapValue()
+                    .entrySet()
+                    .stream()
+                    .collect(
+                            Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    entry -> decryptSecret(entry.getValue(), entry.getKey())));
+    logger.debug("Gateway Service Env Details Auth Map Size: [{}]", AUTH_APPS.size());
+  }
+
+  private static void setProxyHeaders(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
+    PROXY_HEADERS =
+            envDetailsList.stream()
+                    .filter(envDetail -> envDetail.getName().equals(Constants.PROXY_HEADERS))
+                    .findFirst()
+                    .orElseThrow()
+                    .getListValue();
+    logger.debug(
+            "Gateway Service Env Details Proxy Headers Size: [{}]", PROXY_HEADERS.size());
   }
 
   private static String decryptSecret(final String encryptedData, final String keyNameForLogging) {
