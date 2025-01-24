@@ -144,7 +144,6 @@ public class Routes {
   }
 
   public static List<String> getProxyHeaders() {
-    logger.info("{}}", PROXY_HEADERS);
     return PROXY_HEADERS;
   }
 
