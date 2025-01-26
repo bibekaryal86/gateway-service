@@ -27,3 +27,4 @@ build
 .idea
 
 gcp/app-credentials.yaml
+gcp/gateway-service.jar
