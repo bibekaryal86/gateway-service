@@ -1,9 +1,11 @@
 package gateway.service.utils;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import gateway.service.dtos.GatewayRequestDetails;
-import gateway.service.dtos.ResponseMetadata;
-import gateway.service.logging.LogLogger;
+import io.github.bibekaryal86.shdsvc.dtos.ResponseMetadata;
+import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -19,9 +21,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Gateway {
-  public static final LogLogger logger = LogLogger.getLogger(Gateway.class);
+  public static final Logger logger = LoggerFactory.getLogger(Gateway.class);
 
   public static boolean gatewaySvcResponse(
       final GatewayRequestDetails gatewayRequestDetails,
@@ -53,12 +57,12 @@ public class Gateway {
       final HttpResponseStatus status,
       final String errMsg) {
     final FullHttpResponse fullHttpResponse;
-    if (Common.isEmpty(errMsg)) {
+    if (CommonUtilities.isEmpty(errMsg)) {
       fullHttpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
     } else {
       final ResponseMetadata responseMetadata =
           new ResponseMetadata(new ResponseMetadata.ResponseStatusInfo(errMsg));
-      final String jsonResponse = Common.writeValueAsStringNoEx(responseMetadata);
+      final String jsonResponse = CommonUtilities.writeValueAsStringNoEx(responseMetadata);
       fullHttpResponse =
           new DefaultFullHttpResponse(
               HttpVersion.HTTP_1_1, status, Unpooled.wrappedBuffer(jsonResponse.getBytes()));
@@ -96,13 +100,26 @@ public class Gateway {
     final Map<String, List<String>> parameters = queryStringDecoder.parameters();
     final List<String> logLevels = parameters.get(Constants.TEST_LOGS_PARAM_LEVEL);
 
-    if (Common.isEmpty(logLevels)) {
+    if (CommonUtilities.isEmpty(logLevels)) {
       return;
     }
 
-    final String currentLogLevel = Common.transformLogLevel(LogLogger.getCurrentLogLevel());
-    final String proposedLogLevel = logLevels.getFirst();
-    LogLogger.configureGlobalLogging(Common.transformLogLevel(proposedLogLevel));
+    final LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+
+    final ch.qos.logback.classic.Logger loggerContextLogger = loggerContext.getLogger("root");
+    final ch.qos.logback.classic.Logger loggerContextLoggerShdsvc =
+        loggerContext.getLogger("io.github.bibekaryal86");
+
+    System.out.println(
+        loggerContextLoggerShdsvc.getName() + "---" + loggerContextLoggerShdsvc.getLevel());
+
+    final String currentLogLevel = loggerContextLogger.getLevel().toString();
+    loggerContextLogger.setLevel(Level.toLevel(logLevels.getFirst()));
+    loggerContextLoggerShdsvc.setLevel(Level.toLevel(logLevels.getFirst()));
+    final String proposedLogLevel = loggerContextLogger.getLevel().toString();
+
+    System.out.println(
+        loggerContextLoggerShdsvc.getName() + "---" + loggerContextLoggerShdsvc.getLevel());
 
     sendResponse(
         generateTestsLogsResponse(currentLogLevel, proposedLogLevel), channelHandlerContext);
@@ -114,7 +131,7 @@ public class Gateway {
     testsLogsResponse.put("oldLogLevel", oldLogLevel);
     testsLogsResponse.put("newLogLevel", newLogLevel);
     try {
-      return Common.objectMapperProvider().writeValueAsString(testsLogsResponse);
+      return CommonUtilities.objectMapperProvider().writeValueAsString(testsLogsResponse);
     } catch (JsonProcessingException e) {
       return Constants.TESTS_LOGS_RESPONSE;
     }

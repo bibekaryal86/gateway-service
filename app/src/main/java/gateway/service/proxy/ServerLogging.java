@@ -1,7 +1,6 @@
 package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
-import gateway.service.logging.LogLogger;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
@@ -11,9 +10,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.*;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerLogging extends ChannelDuplexHandler {
-  private static final LogLogger logger = LogLogger.getLogger(ServerLogging.class);
+  private static final Logger logger = LoggerFactory.getLogger(ServerLogging.class);
 
   @Override
   public void channelRead(

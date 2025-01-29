@@ -1,7 +1,6 @@
 package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
-import gateway.service.logging.LogLogger;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
@@ -27,9 +26,11 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProxyHandler extends ChannelInboundHandlerAdapter {
-  private static final LogLogger logger = LogLogger.getLogger(ProxyHandler.class);
+  private static final Logger logger = LoggerFactory.getLogger(ProxyHandler.class);
   private final ProxyClient proxy;
 
   private final Map<String, CircuitBreaker> circuitBreakers = new ConcurrentHashMap<>();
@@ -111,7 +112,7 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
         ctx.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
       } catch (Exception ex) {
         circuitBreaker.markFailure();
-        logger.error("[{}] Proxy Handler Error...", ex, gatewayRequestDetails.getRequestId());
+        logger.error("[{}] Proxy Handler Error...", gatewayRequestDetails.getRequestId(), ex);
         Gateway.sendErrorResponse(ctx, HttpResponseStatus.BAD_GATEWAY, "Proxy Handler Error...");
       }
     } else {
@@ -125,7 +126,7 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
     final GatewayRequestDetails gatewayRequestDetails =
         channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
     logger.error(
-        "[{}] Proxy Handler Exception Caught...{}",
+        "[{}] Proxy Handler Exception Caught...",
         Common.getRequestId(gatewayRequestDetails),
         throwable);
 

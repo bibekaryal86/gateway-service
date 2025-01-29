@@ -1,19 +1,21 @@
 package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
-import gateway.service.logging.LogLogger;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
 import gateway.service.utils.Routes;
 import gateway.service.utils.Validate;
+import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SecurityConfig extends ChannelDuplexHandler {
-  private static final LogLogger logger = LogLogger.getLogger(SecurityConfig.class);
+  private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
   @Override
   public void channelRead(
@@ -43,7 +45,7 @@ public class SecurityConfig extends ChannelDuplexHandler {
       if (!gatewayRequestDetails.getApiName().equals(Constants.THIS_APP_NAME)) {
         // check if there is auth header app id (to validate auth token)
         String authAppId = fullHttpRequest.headers().get(Constants.HEADER_AUTH_APPID);
-        if (Common.isEmpty(authAppId)) {
+        if (CommonUtilities.isEmpty(authAppId)) {
           authAppId = fullHttpRequest.headers().get(Constants.HEADER_AUTH_APPID.toLowerCase());
         }
         final int authHeaderAppId = Common.parseIntNoEx(authAppId);
@@ -60,10 +62,10 @@ public class SecurityConfig extends ChannelDuplexHandler {
 
         // check if there is an auth token
         String authHeader = fullHttpRequest.headers().get(HttpHeaderNames.AUTHORIZATION);
-        if (Common.isEmpty(authHeader)) {
+        if (CommonUtilities.isEmpty(authHeader)) {
           authHeader = fullHttpRequest.headers().get(HttpHeaderNames.AUTHORIZATION.toLowerCase());
         }
-        if (Common.isEmpty(authHeader) || !authHeader.startsWith(Constants.BEARER_AUTH)) {
+        if (CommonUtilities.isEmpty(authHeader) || !authHeader.startsWith(Constants.BEARER_AUTH)) {
           logger.error("[{}] Auth Header Missing/Invalid...", gatewayRequestDetails.getRequestId());
           Gateway.sendErrorResponse(
               channelHandlerContext,
@@ -92,7 +94,7 @@ public class SecurityConfig extends ChannelDuplexHandler {
         String appPassword =
             Routes.getAuthApps().get(gatewayRequestDetails.getApiName() + Constants.AUTH_APPS_PWD);
 
-        if (Common.isEmpty(appUsername) || Common.isEmpty(appPassword)) {
+        if (CommonUtilities.isEmpty(appUsername) || CommonUtilities.isEmpty(appPassword)) {
           logger.error("[{}] Auth Credentials Not Found...", gatewayRequestDetails.getRequestId());
           Gateway.sendErrorResponse(
               channelHandlerContext,
@@ -103,7 +105,9 @@ public class SecurityConfig extends ChannelDuplexHandler {
 
         fullHttpRequest
             .headers()
-            .set(HttpHeaderNames.AUTHORIZATION, Common.getBasicAuth(appUsername, appPassword));
+            .set(
+                HttpHeaderNames.AUTHORIZATION,
+                CommonUtilities.getBasicAuth(appUsername, appPassword));
         logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
       }
     }

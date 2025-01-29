@@ -1,15 +1,16 @@
 package gateway.service.proxy;
 
-import gateway.service.logging.LogLogger;
 import gateway.service.utils.Constants;
 import java.io.IOException;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProxyInterceptor implements Interceptor {
-  private static final LogLogger logger = LogLogger.getLogger(ProxyInterceptor.class);
+  private static final Logger logger = LoggerFactory.getLogger(ProxyInterceptor.class);
 
   @NotNull
   @Override
