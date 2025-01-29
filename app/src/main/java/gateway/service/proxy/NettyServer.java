@@ -2,6 +2,7 @@ package gateway.service.proxy;
 
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
+import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -47,7 +48,7 @@ public class NettyServer {
 
       final int serverPort =
           Integer.parseInt(
-              Common.getSystemEnvProperty(Constants.ENV_PORT, Constants.ENV_PORT_DEFAULT));
+              CommonUtilities.getSystemEnvProperty(Constants.ENV_PORT, Constants.ENV_PORT_DEFAULT));
       final ChannelFuture channelFuture = serverBootstrap.bind(serverPort).sync();
 
       logger.info("Gateway Server Started on Port [{}]...", serverPort);

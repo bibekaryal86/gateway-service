@@ -1,10 +1,8 @@
 package gateway.service.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.github.bibekaryal86.shdsvc.AppEnvProperty;
+import io.github.bibekaryal86.shdsvc.dtos.EnvDetailsResponse;
+import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -16,6 +14,8 @@ import java.util.TimerTask;
 import java.util.stream.Collectors;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Routes {
   private static final Logger logger = LoggerFactory.getLogger(Routes.class);
@@ -27,43 +27,15 @@ public class Routes {
   private static Map<String, String> AUTH_APPS = new HashMap<>();
   private static List<String> PROXY_HEADERS = new ArrayList<>();
 
-  private static final String ROUTE_API_URL = Common.getSystemEnvProperty(Constants.ROUTES_MAP_URL);
-  private static final String ROUTE_API_AUTH =
-      Common.getBasicAuth(
-          Common.getSystemEnvProperty(Constants.ENVSVC_USR),
-          Common.getSystemEnvProperty(Constants.ENVSVC_PWD));
-
   public static void init() {
     logger.debug("Retrieving Env Details...");
-
-    Connector.HttpResponse response =
-        Connector.sendRequest(ROUTE_API_URL, "GET", "", null, ROUTE_API_AUTH);
-
-    if (response.statusCode() == HttpResponseStatus.OK.code()) {
-      try {
-        final ObjectMapper objectMapper = Common.objectMapperProvider();
-        EnvDetailsResponse envDetailResponse =
-            objectMapper.readValue(response.responseBody(), EnvDetailsResponse.class);
-
-        if (Common.isEmpty(envDetailResponse.getErrMsg())) {
-          List<EnvDetailsResponse.EnvDetails> envDetailsList = envDetailResponse.getEnvDetails();
-          setAuthExclusions(envDetailsList);
-          setBasicAuthApis(envDetailsList);
-          setRoutesMap(envDetailsList);
-          setAuthApps(envDetailsList);
-          setProxyHeaders(envDetailsList);
-        } else {
-          logger.error(
-              "Failed to Fetch Gateway Service Env Details, Error Response: [{}]",
-              envDetailResponse.getErrMsg());
-        }
-      } catch (Exception ex) {
-        logger.error("Error Retrieving Env Details, Auth Exclusions, Routes Map...", ex);
-      }
-    } else {
-      logger.error(
-          "Failed to Fetch Gateway Service Env Details, Response: [{}]", response.statusCode());
-    }
+    List<EnvDetailsResponse.EnvDetails> envDetailsList =
+        AppEnvProperty.getEnvDetailsList(Constants.THIS_APP_NAME);
+    setAuthExclusions(envDetailsList);
+    setBasicAuthApis(envDetailsList);
+    setRoutesMap(envDetailsList);
+    setAuthApps(envDetailsList);
+    setProxyHeaders(envDetailsList);
   }
 
   public static String getTargetBaseUrl(String apiName) {
@@ -153,7 +125,8 @@ public class Routes {
                             String.format(
                                 "%s_%s",
                                 Constants.BASE_URLS_NAME_BEGINS_WITH,
-                                Common.getSystemEnvProperty(Constants.SPRING_PROFILES_ACTIVE)
+                                CommonUtilities.getSystemEnvProperty(
+                                        Constants.SPRING_PROFILES_ACTIVE)
                                     .toUpperCase())))
             .findFirst()
             .orElseThrow()
@@ -187,7 +160,7 @@ public class Routes {
   }
 
   private static String decryptSecret(final String encryptedData, final String keyNameForLogging) {
-    final String secretKey = Common.getSystemEnvProperty(Constants.SECRET_KEY);
+    final String secretKey = CommonUtilities.getSystemEnvProperty(Constants.SECRET_KEY);
     final byte[] secretKeyBytes = Arrays.copyOf(secretKey.getBytes(), 32);
     final SecretKeySpec secretKeySpec = new SecretKeySpec(secretKeyBytes, "AES");
 
