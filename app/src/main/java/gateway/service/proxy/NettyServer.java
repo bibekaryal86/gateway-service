@@ -1,6 +1,5 @@
 package gateway.service.proxy;
 
-import gateway.service.logging.LogLogger;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import io.netty.bootstrap.ServerBootstrap;
@@ -14,9 +13,11 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NettyServer {
-  private static final LogLogger logger = LogLogger.getLogger(NettyServer.class);
+  private static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
 
   public void start() throws Exception {
     final EventLoopGroup bossGroup = new NioEventLoopGroup(Constants.BOSS_GROUP_THREADS);

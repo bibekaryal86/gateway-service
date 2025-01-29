@@ -3,16 +3,18 @@
  */
 package gateway.service;
 
-import gateway.service.logging.LogLogger;
 import gateway.service.proxy.NettyServer;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Routes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Map;
 
 public class App {
-  private static final LogLogger logger = LogLogger.getLogger(App.class);
+  private static final Logger logger = LoggerFactory.getLogger(App.class);
 
   public static void main(String[] args) throws Exception {
     logger.info("Starting Gateway App...");

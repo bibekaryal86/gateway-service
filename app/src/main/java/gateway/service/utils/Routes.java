@@ -1,9 +1,10 @@
 package gateway.service.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import gateway.service.dtos.EnvDetailsResponse;
-import gateway.service.logging.LogLogger;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -17,7 +18,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
 public class Routes {
-  private static final LogLogger logger = LogLogger.getLogger(Routes.class);
+  private static final Logger logger = LoggerFactory.getLogger(Routes.class);
 
   private static Timer timer;
   private static Map<String, String> ROUTES_MAP = new HashMap<>();
@@ -196,7 +197,7 @@ public class Routes {
       byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
       return new String(decryptedBytes);
     } catch (Exception ex) {
-      logger.error("Error Decrypting Secret: [{}]", ex, keyNameForLogging);
+      logger.error("Error Decrypting Secret: [{}]", keyNameForLogging, ex);
       return "";
     }
   }

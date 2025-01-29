@@ -2,8 +2,6 @@ package gateway.service.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import gateway.service.dtos.GatewayRequestDetails;
-import gateway.service.dtos.ResponseMetadata;
-import gateway.service.logging.LogLogger;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -15,13 +13,16 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.QueryStringDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 public class Gateway {
-  public static final LogLogger logger = LogLogger.getLogger(Gateway.class);
+  public static final Logger logger = LoggerFactory.getLogger(Gateway.class);
 
   public static boolean gatewaySvcResponse(
       final GatewayRequestDetails gatewayRequestDetails,
