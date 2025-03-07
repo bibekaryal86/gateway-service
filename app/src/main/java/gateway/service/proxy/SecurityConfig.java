@@ -48,7 +48,7 @@ public class SecurityConfig extends ChannelDuplexHandler {
         if (CommonUtilities.isEmpty(authAppId)) {
           authAppId = fullHttpRequest.headers().get(Constants.HEADER_AUTH_APPID.toLowerCase());
         }
-        final int authHeaderAppId = Common.parseIntNoEx(authAppId);
+        final int authHeaderAppId = CommonUtilities.parseIntNoEx(authAppId);
 
         if (authHeaderAppId <= 0) {
           logger.error(
