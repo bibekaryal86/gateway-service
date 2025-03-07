@@ -1,7 +1,6 @@
 package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
-import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
 import gateway.service.utils.Routes;
@@ -48,7 +47,7 @@ public class SecurityConfig extends ChannelDuplexHandler {
         if (CommonUtilities.isEmpty(authAppId)) {
           authAppId = fullHttpRequest.headers().get(Constants.HEADER_AUTH_APPID.toLowerCase());
         }
-        final int authHeaderAppId = Common.parseIntNoEx(authAppId);
+        final int authHeaderAppId = CommonUtilities.parseIntNoEx(authAppId);
 
         if (authHeaderAppId <= 0) {
           logger.error(

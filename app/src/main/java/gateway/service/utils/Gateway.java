@@ -61,7 +61,10 @@ public class Gateway {
       fullHttpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
     } else {
       final ResponseMetadata responseMetadata =
-          new ResponseMetadata(new ResponseMetadata.ResponseStatusInfo(errMsg));
+          new ResponseMetadata(
+              new ResponseMetadata.ResponseStatusInfo(errMsg),
+              ResponseMetadata.emptyResponseCrudInfo(),
+              ResponseMetadata.emptyResponsePageInfo());
       final String jsonResponse = CommonUtilities.writeValueAsStringNoEx(responseMetadata);
       fullHttpResponse =
           new DefaultFullHttpResponse(

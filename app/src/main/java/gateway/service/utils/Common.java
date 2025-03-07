@@ -35,12 +35,4 @@ public class Common {
                 "X-Authorization-AppId")
             .build());
   }
-
-  public static int parseIntNoEx(final String value) {
-    try {
-      return Integer.parseInt(value);
-    } catch (Exception ignored) {
-      return 0;
-    }
-  }
 }
