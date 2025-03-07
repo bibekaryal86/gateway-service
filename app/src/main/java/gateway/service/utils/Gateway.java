@@ -5,6 +5,7 @@ import ch.qos.logback.classic.LoggerContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import gateway.service.dtos.GatewayRequestDetails;
 import io.github.bibekaryal86.shdsvc.dtos.ResponseMetadata;
+import io.github.bibekaryal86.shdsvc.dtos.ResponseWithMetadata;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -60,12 +61,13 @@ public class Gateway {
     if (CommonUtilities.isEmpty(errMsg)) {
       fullHttpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
     } else {
-      final ResponseMetadata responseMetadata =
-          new ResponseMetadata(
-              new ResponseMetadata.ResponseStatusInfo(errMsg),
-              ResponseMetadata.emptyResponseCrudInfo(),
-              ResponseMetadata.emptyResponsePageInfo());
-      final String jsonResponse = CommonUtilities.writeValueAsStringNoEx(responseMetadata);
+      final ResponseWithMetadata responseWithMetadata =
+          new ResponseWithMetadata(
+              new ResponseMetadata(
+                  new ResponseMetadata.ResponseStatusInfo(errMsg),
+                  ResponseMetadata.emptyResponseCrudInfo(),
+                  ResponseMetadata.emptyResponsePageInfo()));
+      final String jsonResponse = CommonUtilities.writeValueAsStringNoEx(responseWithMetadata);
       fullHttpResponse =
           new DefaultFullHttpResponse(
               HttpVersion.HTTP_1_1, status, Unpooled.wrappedBuffer(jsonResponse.getBytes()));
