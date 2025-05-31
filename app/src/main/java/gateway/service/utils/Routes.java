@@ -30,7 +30,7 @@ public class Routes {
   public static void init() {
     logger.debug("Retrieving Env Details...");
     List<EnvDetailsResponse.EnvDetails> envDetailsList =
-        AppEnvProperty.getEnvDetailsList(Constants.THIS_APP_NAME);
+        AppEnvProperty.getEnvDetailsList(Constants.THIS_APP_NAME, Boolean.TRUE);
     setAuthExclusions(envDetailsList);
     setBasicAuthApis(envDetailsList);
     setRoutesMap(envDetailsList);
