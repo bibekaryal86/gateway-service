@@ -1,10 +1,10 @@
 package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
+import gateway.service.utils.AppConfigs;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
-import gateway.service.utils.Routes;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -148,7 +148,7 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
                 MediaType.parse(HttpHeaderValues.APPLICATION_JSON.toString()));
 
     final Headers.Builder headersBuilder = new Headers.Builder();
-    final List<String> proxyHeaders = Routes.getProxyHeaders();
+    final List<String> proxyHeaders = AppConfigs.getRoutes().getProxyHeaders();
     fullHttpRequest.headers().entries().stream()
         .filter(
             stringStringEntry -> proxyHeaders.contains(stringStringEntry.getKey().toLowerCase()))

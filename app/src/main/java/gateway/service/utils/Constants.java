@@ -34,6 +34,7 @@ public class Constants {
   public static final String BASIC_AUTH_NAME = "BASIC_AUTH_BEGINS_WITH";
   public static final String BASE_URLS_NAME_BEGINS_WITH = "BASE_URLS";
   public static final String PROXY_HEADERS = "PROXY_HEADERS";
+  public static final String AUTH_DBS_NAME = "AUTH_DBS";
 
   // OTHERS
   public static final String API_NAME_AUTH_SERVICE = "authsvc";
@@ -49,6 +50,7 @@ public class Constants {
 
   // UTILS
   public static final long ROUTES_REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes
+  public static final long APP_CONFIGS_REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes
 
   // PROXY
   public static final AttributeKey<GatewayRequestDetails> GATEWAY_REQUEST_DETAILS_KEY =

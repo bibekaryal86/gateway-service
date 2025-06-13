@@ -1,10 +1,10 @@
 package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
+import gateway.service.utils.AppConfigs;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
-import gateway.service.utils.Routes;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -78,10 +78,12 @@ public class ServerLogging extends ChannelDuplexHandler {
     final HttpMethod requestMethod = fullHttpRequest.method();
     final String apiName = extractApiName(requestUri);
     final String clientId = extractClientId(channelHandlerContext);
-    final String targetBaseUrl = Routes.getTargetBaseUrl(apiName);
+    final String targetBaseUrl = AppConfigs.getTargetBaseUrl(apiName);
+
     if (targetBaseUrl == null) {
       return null;
     }
+
     return new GatewayRequestDetails(
         requestMethod, requestUri, apiName, clientId, targetBaseUrl, startTime);
   }

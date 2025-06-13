@@ -6,8 +6,23 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.codec.http.cors.CorsHandler;
+import java.util.List;
+import java.util.Map;
 
 public class Common {
+
+  public static void validateInitArgs() {
+    final Map<String, String> properties =
+        CommonUtilities.getSystemEnvProperties(Constants.ENV_KEY_NAMES);
+    final List<String> requiredEnvProperties =
+        Constants.ENV_KEY_NAMES.stream().filter(key -> !Constants.ENV_PORT.equals(key)).toList();
+    final List<String> errors =
+        requiredEnvProperties.stream().filter(key -> properties.get(key) == null).toList();
+    if (!errors.isEmpty()) {
+      throw new IllegalStateException(
+          "One or more environment configurations could not be accessed...");
+    }
+  }
 
   public static boolean isProduction() {
     return Constants.PRODUCTION_ENV.equalsIgnoreCase(

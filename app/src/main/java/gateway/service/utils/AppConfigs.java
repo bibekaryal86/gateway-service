@@ -17,15 +17,99 @@ import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Routes {
-  private static final Logger logger = LoggerFactory.getLogger(Routes.class);
+public class AppConfigs {
+  private static final Logger logger = LoggerFactory.getLogger(AppConfigs.class);
+
+  public static class Routes {
+    private Map<String, String> routesMap = new HashMap<>();
+    private List<String> authExclusions = new ArrayList<>();
+    private List<String> basicAuthApps = new ArrayList<>();
+    private Map<String, String> authApps = new HashMap<>();
+    private List<String> proxyHeaders = new ArrayList<>();
+
+    public Map<String, String> getRoutesMap() {
+      return routesMap;
+    }
+
+    public void setRoutesMap(Map<String, String> routesMap) {
+      this.routesMap = routesMap;
+    }
+
+    public List<String> getAuthExclusions() {
+      return authExclusions;
+    }
+
+    public void setAuthExclusions(List<String> authExclusions) {
+      this.authExclusions = authExclusions;
+    }
+
+    public List<String> getBasicAuthApps() {
+      return basicAuthApps;
+    }
+
+    public void setBasicAuthApps(List<String> basicAuthApps) {
+      this.basicAuthApps = basicAuthApps;
+    }
+
+    public Map<String, String> getAuthApps() {
+      return authApps;
+    }
+
+    public void setAuthApps(Map<String, String> authApps) {
+      this.authApps = authApps;
+    }
+
+    public List<String> getProxyHeaders() {
+      return proxyHeaders;
+    }
+
+    public void setProxyHeaders(List<String> proxyHeaders) {
+      this.proxyHeaders = proxyHeaders;
+    }
+  }
+
+  public static class Databases {
+    private String name;
+    private String url;
+    private String username;
+    private String password;
+
+    public String getName() {
+      return name;
+    }
+
+    public void setName(String name) {
+      this.name = name;
+    }
+
+    public String getUrl() {
+      return url;
+    }
+
+    public void setUrl(String url) {
+      this.url = url;
+    }
+
+    public String getUsername() {
+      return username;
+    }
+
+    public void setUsername(String username) {
+      this.username = username;
+    }
+
+    public String getPassword() {
+      return password;
+    }
+
+    public void setPassword(String password) {
+      this.password = password;
+    }
+  }
 
   private static Timer timer;
-  private static Map<String, String> ROUTES_MAP = new HashMap<>();
-  private static List<String> AUTH_EXCLUSIONS = new ArrayList<>();
-  private static List<String> BASIC_AUTH_APIS = new ArrayList<>();
-  private static Map<String, String> AUTH_APPS = new HashMap<>();
-  private static List<String> PROXY_HEADERS = new ArrayList<>();
+  private static final Routes ROUTES = new Routes();
+  private static final Databases DATABASES = new Databases();
 
   public static void init() {
     logger.debug("Retrieving Env Details...");
@@ -36,40 +120,29 @@ public class Routes {
     setRoutesMap(envDetailsList);
     setAuthApps(envDetailsList);
     setProxyHeaders(envDetailsList);
+    setDatabaseConfigs(envDetailsList);
   }
 
   public static String getTargetBaseUrl(String apiName) {
-    for (final String route : ROUTES_MAP.keySet()) {
+    for (final String route : ROUTES.routesMap.keySet()) {
       if (apiName.equals(route)) {
-        return ROUTES_MAP.get(route);
+        return ROUTES.routesMap.get(route);
       }
     }
     return null;
   }
 
-  public static Map<String, String> getRoutesMap() {
-    return ROUTES_MAP;
+  public static Routes getRoutes() {
+    return ROUTES;
   }
 
-  public static List<String> getAuthExclusions() {
-    return AUTH_EXCLUSIONS;
+  public static Databases getDatabases() {
+    return DATABASES;
   }
 
-  public static List<String> getBasicAuthApis() {
-    return BASIC_AUTH_APIS;
-  }
-
-  public static Map<String, String> getAuthApps() {
-    return AUTH_APPS;
-  }
-
-  public static List<String> getProxyHeaders() {
-    return PROXY_HEADERS;
-  }
-
-  // Refresh routes periodically
-  public static void refreshRoutes() {
-    logger.info("Starting Routes Timer...");
+  // Refresh app configs periodically
+  public static void refreshAppConfigs() {
+    logger.info("Starting AppConfigs Timer...");
     timer = new Timer();
     timer.schedule(
         new TimerTask() {
@@ -79,13 +152,13 @@ public class Routes {
           }
         },
         0,
-        Constants.ROUTES_REFRESH_INTERVAL);
+        Constants.APP_CONFIGS_REFRESH_INTERVAL);
 
     Runtime.getRuntime()
         .addShutdownHook(
             new Thread(
                 () -> {
-                  logger.info("Stopping Routes Timer...");
+                  logger.info("Stopping AppConfigs Timer...");
                   if (timer != null) {
                     timer.cancel();
                     timer.purge();
@@ -95,27 +168,29 @@ public class Routes {
   }
 
   private static void setAuthExclusions(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
-    AUTH_EXCLUSIONS =
+    ROUTES.authExclusions =
         envDetailsList.stream()
             .filter(envDetail -> envDetail.getName().equals(Constants.AUTH_EXCLUSIONS_NAME))
             .findFirst()
             .orElseThrow()
             .getListValue();
-    logger.debug("Gateway Service Env Details Auth Exclusions Size: [{}]", AUTH_EXCLUSIONS.size());
+    logger.debug(
+        "Gateway Service App Config Auth Exclusions Size: [{}]", ROUTES.authExclusions.size());
   }
 
   private static void setBasicAuthApis(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
-    BASIC_AUTH_APIS =
+    ROUTES.basicAuthApps =
         envDetailsList.stream()
             .filter(envDetail -> envDetail.getName().equals(Constants.BASIC_AUTH_NAME))
             .findFirst()
             .orElseThrow()
             .getListValue();
-    logger.debug("Gateway Service Env Details Basic Auth Apis Size: [{}]", BASIC_AUTH_APIS.size());
+    logger.debug(
+        "Gateway Service App Config Basic Auth Apps Size: [{}]", ROUTES.basicAuthApps.size());
   }
 
   private static void setRoutesMap(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
-    ROUTES_MAP =
+    ROUTES.routesMap =
         envDetailsList.stream()
             .filter(
                 envDetail ->
@@ -131,11 +206,11 @@ public class Routes {
             .findFirst()
             .orElseThrow()
             .getMapValue();
-    logger.debug("Gateway Service Env Details Routes Map Size: [{}]", ROUTES_MAP.size());
+    logger.debug("Gateway Service App Config Routes Map Size: [{}]", ROUTES.routesMap.size());
   }
 
   private static void setAuthApps(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
-    AUTH_APPS =
+    ROUTES.authApps =
         envDetailsList.stream()
             .filter(envDetail -> envDetail.getName().equals(Constants.AUTH_APPS_NAME))
             .findFirst()
@@ -146,17 +221,22 @@ public class Routes {
             .collect(
                 Collectors.toMap(
                     Map.Entry::getKey, entry -> decryptSecret(entry.getValue(), entry.getKey())));
-    logger.debug("Gateway Service Env Details Auth Map Size: [{}]", AUTH_APPS.size());
+    logger.debug("Gateway Service App Config Auth Apps Size: [{}]", ROUTES.authApps.size());
   }
 
   private static void setProxyHeaders(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
-    PROXY_HEADERS =
+    ROUTES.proxyHeaders =
         envDetailsList.stream()
             .filter(envDetail -> envDetail.getName().equals(Constants.PROXY_HEADERS))
             .findFirst()
             .orElseThrow()
             .getListValue();
-    logger.debug("Gateway Service Env Details Proxy Headers Size: [{}]", PROXY_HEADERS.size());
+    logger.debug("Gateway Service App Config Proxy Headers Size: [{}]", ROUTES.proxyHeaders.size());
+  }
+
+  private static void setDatabaseConfigs(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
+
+
   }
 
   private static String decryptSecret(final String encryptedData, final String keyNameForLogging) {
@@ -179,7 +259,7 @@ public class Routes {
   Encrypt method kept here for reference only
 
   public static String encryptSecret(String data) throws Exception {
-    String secretKey = Common.getSystemEnvProperty(Constants.SECRET_KEY);
+    String secretKey = CommonUtilities.getSystemEnvProperty(Constants.SECRET_KEY);
     byte[] secretKeyBytes = Arrays.copyOf(secretKey.getBytes(), 32);
     SecretKeySpec keySpec = new SecretKeySpec(secretKeyBytes, "AES");
 
