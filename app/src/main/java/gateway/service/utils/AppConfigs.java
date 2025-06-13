@@ -275,53 +275,53 @@ public class AppConfigs {
             .stream()
             .collect(
                 Collectors.groupingBy(
-                    entry -> entry.getKey().replaceAll("(_usr|_pwd|_url).*", ""),
-                    Collectors.toMap(
-                        entry -> {
-                          if (entry.getKey().contains("_usr")) return "username";
-                          if (entry.getKey().contains("_pwd")) return "password";
-                          if (entry.getKey().contains("_url")) return "url";
-                          return "unknown";
-                        },
-                        Map.Entry::getValue)))
+                    entry -> getDbName(entry.getKey()),
+                    Collectors.toMap(entry -> getDbValueKey(entry.getKey()), Map.Entry::getValue)))
             .entrySet()
             .stream()
-            .collect(
-                Collectors.toMap(
-                    Map.Entry::getKey,
-                    entry ->
-                        new Databases(
-                            entry.getKey(),
-                            entry.getValue().getOrDefault("url", "N/A"),
-                            entry.getValue().getOrDefault("username", "N/A"),
-                            decryptSecret(
-                                entry.getValue().getOrDefault("password", ""), "password"))))
+            .collect(Collectors.toMap(Map.Entry::getKey, AppConfigs::createDatabaseConfig))
             .entrySet()
             .stream()
-            .collect(
-                Collectors.toMap(
-                    Map.Entry::getKey,
-                    entry -> {
-                      ConnectionFactory connectionFactory =
-                          new DriverManagerConnectionFactory(
-                              entry.getValue().getUrl(),
-                              entry.getValue().getUsername(),
-                              entry.getValue().getPassword());
-
-                      PoolableConnectionFactory poolableConnectionFactory =
-                          new PoolableConnectionFactory(connectionFactory, null);
-
-                      GenericObjectPool<PoolableConnection> connectionPool =
-                          new GenericObjectPool<>(poolableConnectionFactory);
-                      connectionPool.setMaxTotal(Constants.DB_CONFIG_MAX_CONNECTIONS);
-                      connectionPool.setMinIdle(Constants.DB_CONFIG_MIN_IDLE);
-
-                      poolableConnectionFactory.setPool(connectionPool);
-
-                      return new PoolingDataSource<PoolableConnection>(connectionPool);
-                    }));
+            .collect(Collectors.toMap(Map.Entry::getKey, AppConfigs::createDataSource));
 
     logger.debug("Gateway Service App Config Databases Size: [{}]", DATABASES.size());
+  }
+
+  private static String getDbName(final String key) {
+    return key.replaceAll("(_usr|_pwd|_url).*", "");
+  }
+
+  private static String getDbValueKey(final String key) {
+    if (key.contains("_usr")) return "username";
+    if (key.contains("_pwd")) return "password";
+    if (key.contains("_url")) return "url";
+    return "unknown";
+  }
+
+  private static Databases createDatabaseConfig(Map.Entry<String, Map<String, String>> entry) {
+    return new Databases(
+        entry.getKey(),
+        entry.getValue().getOrDefault("url", "N/A"),
+        entry.getValue().getOrDefault("username", "N/A"),
+        decryptSecret(entry.getValue().getOrDefault("password", ""), "password"));
+  }
+
+  private static DataSource createDataSource(Map.Entry<String, Databases> entry) {
+    ConnectionFactory connectionFactory =
+        new DriverManagerConnectionFactory(
+            entry.getValue().getUrl(),
+            entry.getValue().getUsername(),
+            entry.getValue().getPassword());
+
+    PoolableConnectionFactory poolableConnectionFactory =
+        new PoolableConnectionFactory(connectionFactory, null);
+    GenericObjectPool<PoolableConnection> connectionPool =
+        new GenericObjectPool<>(poolableConnectionFactory);
+    connectionPool.setMaxTotal(Constants.DB_CONFIG_MAX_CONNECTIONS);
+    connectionPool.setMinIdle(Constants.DB_CONFIG_MIN_IDLE);
+
+    poolableConnectionFactory.setPool(connectionPool);
+    return new PoolingDataSource<>(connectionPool);
   }
 
   private static String decryptSecret(final String encryptedData, final String keyNameForLogging) {
