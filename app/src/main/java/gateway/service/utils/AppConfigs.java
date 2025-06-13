@@ -31,40 +31,36 @@ public class AppConfigs {
       return routesMap;
     }
 
-    public void setRoutesMap(Map<String, String> routesMap) {
-      this.routesMap = routesMap;
-    }
-
     public List<String> getAuthExclusions() {
       return authExclusions;
-    }
-
-    public void setAuthExclusions(List<String> authExclusions) {
-      this.authExclusions = authExclusions;
     }
 
     public List<String> getBasicAuthApps() {
       return basicAuthApps;
     }
 
-    public void setBasicAuthApps(List<String> basicAuthApps) {
-      this.basicAuthApps = basicAuthApps;
-    }
-
     public Map<String, String> getAuthApps() {
       return authApps;
-    }
-
-    public void setAuthApps(Map<String, String> authApps) {
-      this.authApps = authApps;
     }
 
     public List<String> getProxyHeaders() {
       return proxyHeaders;
     }
 
-    public void setProxyHeaders(List<String> proxyHeaders) {
-      this.proxyHeaders = proxyHeaders;
+    @Override
+    public String toString() {
+      return "Routes{"
+          + "routesMap="
+          + routesMap.size()
+          + ", authExclusions="
+          + authExclusions.size()
+          + ", basicAuthApps="
+          + basicAuthApps.size()
+          + ", authApps="
+          + authApps.size()
+          + ", proxyHeaders="
+          + proxyHeaders.size()
+          + '}';
     }
   }
 
@@ -73,6 +69,16 @@ public class AppConfigs {
     private String url;
     private String username;
     private String password;
+
+    public Databases() {}
+
+    public Databases(
+        final String name, final String url, final String username, final String password) {
+      this.name = name;
+      this.url = url;
+      this.username = username;
+      this.password = password;
+    }
 
     public String getName() {
       return name;
@@ -105,22 +111,54 @@ public class AppConfigs {
     public void setPassword(String password) {
       this.password = password;
     }
+
+    @Override
+    public String toString() {
+      return "Databases{"
+          + "name='"
+          + name
+          + '\''
+          + ", url='"
+          + "****"
+          + '\''
+          + ", username='"
+          + "****"
+          + '\''
+          + ", password='"
+          + "****"
+          + '\''
+          + '}';
+    }
   }
 
   private static Timer timer;
   private static final Routes ROUTES = new Routes();
-  private static final Databases DATABASES = new Databases();
+  private static Map<String, Databases> DATABASES = new HashMap<>();
 
   public static void init() {
-    logger.debug("Retrieving Env Details...");
-    List<EnvDetailsResponse.EnvDetails> envDetailsList =
-        AppEnvProperty.getEnvDetailsList(Constants.THIS_APP_NAME, Boolean.TRUE);
-    setAuthExclusions(envDetailsList);
-    setBasicAuthApis(envDetailsList);
-    setRoutesMap(envDetailsList);
-    setAuthApps(envDetailsList);
-    setProxyHeaders(envDetailsList);
-    setDatabaseConfigs(envDetailsList);
+    logger.info("Starting AppConfigs...");
+    timer = new Timer();
+    timer.schedule(
+        new TimerTask() {
+          @Override
+          public void run() {
+            refreshAppConfigs();
+          }
+        },
+        0,
+        Constants.APP_CONFIGS_REFRESH_INTERVAL);
+
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  logger.info("Stopping AppConfigs...");
+                  if (timer != null) {
+                    timer.cancel();
+                    timer.purge();
+                    timer = null;
+                  }
+                }));
   }
 
   public static String getTargetBaseUrl(String apiName) {
@@ -136,35 +174,20 @@ public class AppConfigs {
     return ROUTES;
   }
 
-  public static Databases getDatabases() {
+  public static Map<String, Databases> getDatabases() {
     return DATABASES;
   }
 
-  // Refresh app configs periodically
-  public static void refreshAppConfigs() {
-    logger.info("Starting AppConfigs Timer...");
-    timer = new Timer();
-    timer.schedule(
-        new TimerTask() {
-          @Override
-          public void run() {
-            init();
-          }
-        },
-        0,
-        Constants.APP_CONFIGS_REFRESH_INTERVAL);
-
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread(
-                () -> {
-                  logger.info("Stopping AppConfigs Timer...");
-                  if (timer != null) {
-                    timer.cancel();
-                    timer.purge();
-                    timer = null;
-                  }
-                }));
+  private static void refreshAppConfigs() {
+    logger.debug("Retrieving Env Details...");
+    List<EnvDetailsResponse.EnvDetails> envDetailsList =
+        AppEnvProperty.getEnvDetailsList(Constants.THIS_APP_NAME, Boolean.TRUE);
+    setAuthExclusions(envDetailsList);
+    setBasicAuthApis(envDetailsList);
+    setRoutesMap(envDetailsList);
+    setAuthApps(envDetailsList);
+    setProxyHeaders(envDetailsList);
+    setDatabaseConfigs(envDetailsList);
   }
 
   private static void setAuthExclusions(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
@@ -235,11 +258,45 @@ public class AppConfigs {
   }
 
   private static void setDatabaseConfigs(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
-
-
+    DATABASES =
+        envDetailsList.stream()
+            .filter(envDetail -> envDetail.getName().equals(Constants.AUTH_DBS_NAME))
+            .findFirst()
+            .orElseThrow()
+            .getMapValue()
+            .entrySet()
+            .stream()
+            .collect(
+                Collectors.groupingBy(
+                    entry -> entry.getKey().replaceAll("(_usr|_pwd|_url).*", ""),
+                    Collectors.toMap(
+                        entry -> {
+                          if (entry.getKey().contains("_usr")) return "username";
+                          if (entry.getKey().contains("_pwd")) return "password";
+                          if (entry.getKey().contains("_url")) return "url";
+                          return "unknown";
+                        },
+                        Map.Entry::getValue)))
+            .entrySet()
+            .stream()
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry ->
+                        new Databases(
+                            entry.getKey(),
+                            entry.getValue().getOrDefault("url", "N/A"),
+                            entry.getValue().getOrDefault("username", "N/A"),
+                            decryptSecret(
+                                entry.getValue().getOrDefault("password", ""), "password"))));
+    logger.debug("Gateway Service App Config Databases Size: [{}]", DATABASES.size());
   }
 
   private static String decryptSecret(final String encryptedData, final String keyNameForLogging) {
+    if (CommonUtilities.isEmpty(encryptedData)) {
+      return "N/A";
+    }
+
     final String secretKey = CommonUtilities.getSystemEnvProperty(Constants.SECRET_KEY);
     final byte[] secretKeyBytes = Arrays.copyOf(secretKey.getBytes(), 32);
     final SecretKeySpec secretKeySpec = new SecretKeySpec(secretKeyBytes, "AES");

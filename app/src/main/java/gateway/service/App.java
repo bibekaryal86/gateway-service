@@ -15,7 +15,7 @@ public class App {
   public static void main(String[] args) throws Exception {
     logger.info("Starting Gateway App...");
     Common.validateInitArgs();
-    AppConfigs.refreshAppConfigs();
+    AppConfigs.init();
     new NettyServer().start();
     logger.info("Started Gateway App...");
   }

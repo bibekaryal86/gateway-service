@@ -95,7 +95,7 @@ public class Gateway {
   }
 
   private static void handleTestsReset(final ChannelHandlerContext channelHandlerContext) {
-    AppConfigs.refreshAppConfigs();
+    AppConfigs.init();
     sendResponse(Constants.TESTS_RESET_RESPONSE, channelHandlerContext);
   }
 
