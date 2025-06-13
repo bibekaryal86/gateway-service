@@ -162,11 +162,14 @@ public class AppConfigs {
   }
 
   public static String getTargetBaseUrl(String apiName) {
-    for (final String route : ROUTES.routesMap.keySet()) {
+    final Map<String, String> routesMap = ROUTES.getRoutesMap();
+
+    for (final String route : routesMap.keySet()) {
       if (apiName.equals(route)) {
-        return ROUTES.routesMap.get(route);
+        return routesMap.get(route);
       }
     }
+
     return null;
   }
 
