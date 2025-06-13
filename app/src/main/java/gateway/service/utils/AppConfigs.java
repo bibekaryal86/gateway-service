@@ -11,9 +11,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import javax.sql.DataSource;
+import org.apache.commons.dbcp2.ConnectionFactory;
+import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp2.PoolableConnection;
+import org.apache.commons.dbcp2.PoolableConnectionFactory;
+import org.apache.commons.dbcp2.PoolingDataSource;
+import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,7 +141,7 @@ public class AppConfigs {
 
   private static Timer timer;
   private static final Routes ROUTES = new Routes();
-  private static Map<String, Databases> DATABASES = new HashMap<>();
+  private static Map<String, DataSource> DATABASES = new ConcurrentHashMap<>();
 
   public static void init() {
     logger.info("Starting AppConfigs...");
@@ -161,23 +169,19 @@ public class AppConfigs {
                 }));
   }
 
-  public static String getTargetBaseUrl(String apiName) {
-    final Map<String, String> routesMap = ROUTES.getRoutesMap();
+  public static String getTargetBaseUrl(final String apiName) {
+    return ROUTES.getRoutesMap().getOrDefault(apiName, null);
+  }
 
-    for (final String route : routesMap.keySet()) {
-      if (apiName.equals(route)) {
-        return routesMap.get(route);
-      }
-    }
-
-    return null;
+  public static DataSource getTargetDataSource(final String dbName) {
+    return DATABASES.getOrDefault(dbName, null);
   }
 
   public static Routes getRoutes() {
     return ROUTES;
   }
 
-  public static Map<String, Databases> getDatabases() {
+  public static Map<String, DataSource> getDatabases() {
     return DATABASES;
   }
 
@@ -291,7 +295,32 @@ public class AppConfigs {
                             entry.getValue().getOrDefault("url", "N/A"),
                             entry.getValue().getOrDefault("username", "N/A"),
                             decryptSecret(
-                                entry.getValue().getOrDefault("password", ""), "password"))));
+                                entry.getValue().getOrDefault("password", ""), "password"))))
+            .entrySet()
+            .stream()
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> {
+                      ConnectionFactory connectionFactory =
+                          new DriverManagerConnectionFactory(
+                              entry.getValue().getUrl(),
+                              entry.getValue().getUsername(),
+                              entry.getValue().getPassword());
+
+                      PoolableConnectionFactory poolableConnectionFactory =
+                          new PoolableConnectionFactory(connectionFactory, null);
+
+                      GenericObjectPool<PoolableConnection> connectionPool =
+                          new GenericObjectPool<>(poolableConnectionFactory);
+                      connectionPool.setMaxTotal(Constants.DB_CONFIG_MAX_CONNECTIONS);
+                      connectionPool.setMinIdle(Constants.DB_CONFIG_MIN_IDLE);
+
+                      poolableConnectionFactory.setPool(connectionPool);
+
+                      return new PoolingDataSource<PoolableConnection>(connectionPool);
+                    }));
+
     logger.debug("Gateway Service App Config Databases Size: [{}]", DATABASES.size());
   }
 

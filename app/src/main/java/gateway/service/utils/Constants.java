@@ -49,8 +49,9 @@ public class Constants {
   public static final String AUTH_APPS_PWD = "_pwd";
 
   // UTILS
-  public static final long ROUTES_REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes
   public static final long APP_CONFIGS_REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes
+  public static final int DB_CONFIG_MAX_CONNECTIONS = 25;
+  public static final int DB_CONFIG_MIN_IDLE = 2;
 
   // PROXY
   public static final AttributeKey<GatewayRequestDetails> GATEWAY_REQUEST_DETAILS_KEY =
