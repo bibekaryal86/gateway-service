@@ -77,7 +77,7 @@ public class ServerLogging extends ChannelDuplexHandler {
     final String requestUri = fullHttpRequest.uri();
     final HttpMethod requestMethod = fullHttpRequest.method();
     final String apiName = extractApiName(requestUri);
-    final String clientId = extractClientId(channelHandlerContext);
+    final String clientId = Common.extractClientId(channelHandlerContext);
     final String targetBaseUrl = AppConfigs.getTargetBaseUrl(apiName);
 
     if (targetBaseUrl == null) {
@@ -86,19 +86,6 @@ public class ServerLogging extends ChannelDuplexHandler {
 
     return new GatewayRequestDetails(
         requestMethod, requestUri, apiName, clientId, targetBaseUrl, startTime);
-  }
-
-  private String extractClientId(final ChannelHandlerContext channelHandlerContext) {
-    String remoteAddress = channelHandlerContext.channel().remoteAddress().toString();
-
-    if (remoteAddress.contains("/")) {
-      remoteAddress = remoteAddress.substring(remoteAddress.indexOf("/") + 1);
-    }
-    if (remoteAddress.contains(":")) {
-      remoteAddress = remoteAddress.substring(0, remoteAddress.indexOf(":"));
-    }
-
-    return remoteAddress;
   }
 
   private String extractApiName(String requestUri) {

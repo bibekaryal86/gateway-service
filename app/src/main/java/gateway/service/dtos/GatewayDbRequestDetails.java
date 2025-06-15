@@ -1,6 +1,5 @@
 package gateway.service.dtos;
 
-import io.netty.handler.codec.http.HttpMethod;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -8,10 +7,13 @@ import java.util.UUID;
 
 public class GatewayDbRequestDetails implements Serializable {
   private final String requestId;
-  private final String database;
-  private final HttpMethod action;
+  private final long startTime;
+
+  private String clientId;
 
   // CRUD, Raw
+  private final String database;
+  private final String action;
   private final String table;
   // RUD
   private final Map<String, Object> where;
@@ -27,7 +29,7 @@ public class GatewayDbRequestDetails implements Serializable {
 
   public GatewayDbRequestDetails(
       final String database,
-      final HttpMethod action,
+      final String action,
       final String table,
       final Map<String, Object> where,
       final Map<String, Object> values,
@@ -36,6 +38,8 @@ public class GatewayDbRequestDetails implements Serializable {
       final String query,
       final List<Object> params) {
     this.requestId = UUID.randomUUID().toString();
+    this.startTime = System.nanoTime();
+
     this.database = database;
     this.action = action;
     this.table = table;
@@ -51,11 +55,23 @@ public class GatewayDbRequestDetails implements Serializable {
     return requestId;
   }
 
+  public long getStartTime() {
+    return startTime;
+  }
+
+  public String getClientId() {
+    return clientId;
+  }
+
+  public void setClientId(String clientId) {
+    this.clientId = clientId;
+  }
+
   public String getDatabase() {
     return database;
   }
 
-  public HttpMethod getAction() {
+  public String getAction() {
     return action;
   }
 
@@ -93,11 +109,17 @@ public class GatewayDbRequestDetails implements Serializable {
         + "requestId='"
         + requestId
         + '\''
+        + ", startTime="
+        + startTime
+        + ", clientId='"
+        + clientId
+        + '\''
         + ", database='"
         + database
         + '\''
-        + ", action="
+        + ", action='"
         + action
+        + '\''
         + ", table='"
         + table
         + '\''
@@ -114,6 +136,28 @@ public class GatewayDbRequestDetails implements Serializable {
         + '\''
         + ", params="
         + params
+        + '}';
+  }
+
+  public String toStringLimited() {
+    return "GatewayDbRequestDetails{"
+        + "requestId='"
+        + requestId
+        + '\''
+        + ", startTime="
+        + startTime
+        + ", clientId='"
+        + clientId
+        + '\''
+        + ", database='"
+        + database
+        + '\''
+        + ", action='"
+        + action
+        + '\''
+        + ", table='"
+        + table
+        + '\''
         + '}';
   }
 }

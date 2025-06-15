@@ -13,6 +13,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutorGroup;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,8 @@ public class NettyServer {
   public void start() throws Exception {
     final EventLoopGroup bossGroup = new NioEventLoopGroup(Constants.BOSS_GROUP_THREADS);
     final EventLoopGroup workerGroup = new NioEventLoopGroup(Constants.WORKER_GROUP_THREADS);
+
+    EventExecutorGroup dbExecutorGroup = new DefaultEventExecutorGroup(Constants.DB_GROUP_THREADS);
 
     try {
       final ServerBootstrap serverBootstrap = new ServerBootstrap();
@@ -40,6 +44,7 @@ public class NettyServer {
                       .addLast(new HttpServerCodec())
                       .addLast(new HttpObjectAggregator(Constants.MAX_CONTENT_LENGTH))
                       .addLast(Common.newCorsHandler())
+                      .addLast(dbExecutorGroup, new DbProxyHandler(Constants.DB_PROXY_ENDPOINT))
                       .addLast(new ServerLogging())
                       .addLast(new SecurityConfig())
                       .addLast(new ProxyHandler());

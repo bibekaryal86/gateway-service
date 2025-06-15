@@ -41,7 +41,8 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
   }
 
   @Override
-  public void channelRead(@NotNull final ChannelHandlerContext channelHandlerContext, @NotNull final Object object)
+  public void channelRead(
+      @NotNull final ChannelHandlerContext channelHandlerContext, @NotNull final Object object)
       throws Exception {
     if (object instanceof FullHttpRequest fullHttpRequest) {
       final GatewayRequestDetails gatewayRequestDetails =
@@ -49,7 +50,9 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
 
       if (gatewayRequestDetails == null) {
         Gateway.sendErrorResponse(
-            channelHandlerContext, HttpResponseStatus.BAD_REQUEST, "Gateway Request Details Error...");
+            channelHandlerContext,
+            HttpResponseStatus.BAD_REQUEST,
+            "Gateway Request Details Error...");
         return;
       }
 
@@ -69,7 +72,9 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
             gatewayRequestDetails.getRequestId(),
             circuitBreaker);
         Gateway.sendErrorResponse(
-            channelHandlerContext, HttpResponseStatus.SERVICE_UNAVAILABLE, "Maximum Failures Allowed Exceeded...");
+            channelHandlerContext,
+            HttpResponseStatus.SERVICE_UNAVAILABLE,
+            "Maximum Failures Allowed Exceeded...");
         return;
       }
 
@@ -81,7 +86,9 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
         logger.error(
             "[{}] RateLimiter Response: [{}]", gatewayRequestDetails.getRequestId(), rateLimiter);
         Gateway.sendErrorResponse(
-            channelHandlerContext, HttpResponseStatus.TOO_MANY_REQUESTS, "Maximum Request Allowed Exceeded...");
+            channelHandlerContext,
+            HttpResponseStatus.TOO_MANY_REQUESTS,
+            "Maximum Request Allowed Exceeded...");
         return;
       }
 
@@ -109,11 +116,14 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
         fullHttpResponse
             .headers()
             .set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
-        channelHandlerContext.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
+        channelHandlerContext
+            .writeAndFlush(fullHttpResponse)
+            .addListener(ChannelFutureListener.CLOSE);
       } catch (Exception ex) {
         circuitBreaker.markFailure();
         logger.error("[{}] Proxy Handler Error...", gatewayRequestDetails.getRequestId(), ex);
-        Gateway.sendErrorResponse(channelHandlerContext, HttpResponseStatus.BAD_GATEWAY, "Proxy Handler Error...");
+        Gateway.sendErrorResponse(
+            channelHandlerContext, HttpResponseStatus.BAD_GATEWAY, "Proxy Handler Error...");
       }
     } else {
       super.channelRead(channelHandlerContext, object);

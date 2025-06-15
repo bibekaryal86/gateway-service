@@ -2,6 +2,7 @@ package gateway.service.utils;
 
 import gateway.service.dtos.GatewayRequestDetails;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.cors.CorsConfigBuilder;
@@ -49,5 +50,18 @@ public class Common {
                 HttpHeaderNames.CONTENT_LENGTH,
                 "X-Authorization-AppId")
             .build());
+  }
+
+  public static String extractClientId(final ChannelHandlerContext channelHandlerContext) {
+    String remoteAddress = channelHandlerContext.channel().remoteAddress().toString();
+
+    if (remoteAddress.contains("/")) {
+      remoteAddress = remoteAddress.substring(remoteAddress.indexOf("/") + 1);
+    }
+    if (remoteAddress.contains(":")) {
+      remoteAddress = remoteAddress.substring(0, remoteAddress.indexOf(":"));
+    }
+
+    return remoteAddress;
   }
 }

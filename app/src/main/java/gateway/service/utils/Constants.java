@@ -16,17 +16,22 @@ public class Constants {
   public static final String ENVSVC_BASE_URL = "ENVSVC_BASE_URL";
   public static final String VALIDATE_TOKEN_URL = "VALIDATE_TOKEN_URL";
   public static final String SECRET_KEY = "SECRET_KEY";
+  public static final String DB_PROXY_USR = "DB_PROXY_USR";
+  public static final String DB_PROXY_PWD = "DB_PROXY_PWD";
+
   public static final List<String> ENV_KEY_NAMES =
       List.of(
           ENV_PORT,
           SPRING_PROFILES_ACTIVE,
-          SECRET_KEY,
           ENVSVC_USR,
           ENVSVC_PWD,
           AUTHSVC_USR,
           AUTHSVC_PWD,
           ENVSVC_BASE_URL,
-          VALIDATE_TOKEN_URL);
+          VALIDATE_TOKEN_URL,
+          SECRET_KEY,
+          DB_PROXY_USR,
+          DB_PROXY_PWD);
 
   // ENV DETAILS
   public static final String AUTH_APPS_NAME = "AUTH_APPS";
@@ -56,9 +61,12 @@ public class Constants {
   // PROXY
   public static final AttributeKey<GatewayRequestDetails> GATEWAY_REQUEST_DETAILS_KEY =
       AttributeKey.valueOf("GATEWAY_REQUEST_DETAILS");
+  public static final AttributeKey<GatewayRequestDetails> GATEWAY_DB_REQUEST_DETAILS_KEY =
+      AttributeKey.valueOf("GATEWAY_DB_REQUEST_DETAILS");
 
   public static final int BOSS_GROUP_THREADS = 1;
   public static final int WORKER_GROUP_THREADS = 8;
+  public static final int DB_GROUP_THREADS = 16;
   public static final int CONNECT_TIMEOUT_MILLIS = 5000; // 5 seconds
   public static final int MAX_CONTENT_LENGTH = 1048576; // 1MB
   // CIRCUIT BREAKER
@@ -70,6 +78,7 @@ public class Constants {
   public static final int RL_TIME_WINDOW_MILLIS = 1;
 
   // GATEWAY SERVICE ENDPOINTS
+  public static final String DB_PROXY_ENDPOINT = "/gatewaysvc/db/execute";
   public static final String TESTS_PING = "/" + THIS_APP_NAME + "/tests/ping";
   public static final String TESTS_RESET = "/" + THIS_APP_NAME + "/tests/reset";
   public static final String TESTS_LOGS = "/" + THIS_APP_NAME + "/tests/logs";
