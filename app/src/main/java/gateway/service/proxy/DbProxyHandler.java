@@ -2,7 +2,6 @@ package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayDbRequestDetails;
 import gateway.service.dtos.GatewayDbResponseDetails;
-import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
@@ -42,19 +41,24 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
     if (object instanceof FullHttpRequest fullHttpRequest) {
       final String requestUri = fullHttpRequest.uri();
       if (requestUri.equals(dbProxyEndpoint)) {
-        // create db gateway request details
         final GatewayDbRequestDetails gatewayDbRequestDetails =
             extractGatewayDbRequestDetails(channelHandlerContext, fullHttpRequest);
-        // log request
         logGatewayDbRequestDetails(gatewayDbRequestDetails);
-        // check security
-        if (checkBasicAuthorization(gatewayDbRequestDetails.getRequestId(), fullHttpRequest)) {
-          final CircuitBreaker circuitBreaker =
-              circuitBreakers.computeIfAbsent(
-                  gatewayDbRequestDetails.getDatabase(),
-                  key ->
-                      new CircuitBreaker(
-                          Constants.CB_FAILURE_THRESHOLD, Constants.CB_OPEN_TIMEOUT));
+
+        final CircuitBreaker circuitBreaker =
+            circuitBreakers.computeIfAbsent(
+                gatewayDbRequestDetails.getDatabase(),
+                key ->
+                    new CircuitBreaker(Constants.CB_FAILURE_THRESHOLD, Constants.CB_OPEN_TIMEOUT));
+        final RateLimiter rateLimiter =
+            rateLimiters.computeIfAbsent(
+                gatewayDbRequestDetails.getClientId(),
+                key -> new RateLimiter(Constants.RL_MAX_REQUESTS, Constants.RL_TIME_WINDOW_MILLIS));
+
+        final boolean isAuthorized =
+            checkBasicAuthorization(gatewayDbRequestDetails.getRequestId(), fullHttpRequest);
+
+        if (isAuthorized) {
           if (!circuitBreaker.allowRequest()) {
             logger.error(
                 "[{}] CircuitBreaker DB Response: [{}]",
@@ -67,11 +71,6 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
             return;
           }
 
-          RateLimiter rateLimiter =
-              rateLimiters.computeIfAbsent(
-                  gatewayDbRequestDetails.getClientId(),
-                  key ->
-                      new RateLimiter(Constants.RL_MAX_REQUESTS, Constants.RL_TIME_WINDOW_MILLIS));
           if (!rateLimiter.allowRequest()) {
             logger.error(
                 "[{}] RateLimiter DB Response: [{}]",
@@ -83,14 +82,28 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
                 "Maximum Request Allowed Exceeded...");
             return;
           }
-
-          // execute db action
-          // log response
         } else {
+          circuitBreaker.markFailure();
           logger.error("[{}] Unauthorized DB Response...", gatewayDbRequestDetails.getRequestId());
           Gateway.sendErrorResponse(
               channelHandlerContext, HttpResponseStatus.UNAUTHORIZED, "Unauthorized Request...");
           return;
+        }
+
+        try {
+          final GatewayDbResponseDetails gatewayDbResponseDetails =
+              executeDbAction(gatewayDbRequestDetails);
+          circuitBreaker.markSuccess();
+          logGatewayDbResponseDetails(
+              gatewayDbRequestDetails.getStartTime(), gatewayDbResponseDetails);
+          Gateway.sendResponse(
+              CommonUtilities.writeValueAsStringNoEx(gatewayDbResponseDetails),
+              channelHandlerContext);
+        } catch (Exception ex) {
+          circuitBreaker.markFailure();
+          logger.error("[{}] Proxy Handler Error...", gatewayDbRequestDetails.getRequestId(), ex);
+          Gateway.sendErrorResponse(
+              channelHandlerContext, HttpResponseStatus.BAD_GATEWAY, "DB Proxy Handler Error...");
         }
       } else {
         super.channelRead(channelHandlerContext, object);
@@ -101,17 +114,18 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
   @Override
   public void exceptionCaught(
       final ChannelHandlerContext channelHandlerContext, final Throwable throwable) {
-    final GatewayRequestDetails gatewayRequestDetails =
-        channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
+    final GatewayDbRequestDetails gatewayDbRequestDetails =
+        channelHandlerContext.channel().attr(Constants.GATEWAY_DB_REQUEST_DETAILS_KEY).get();
+
     logger.error(
-        "[{}] Proxy Handler Exception Caught...",
-        Common.getRequestId(gatewayRequestDetails),
+        "[{}] DB Proxy Handler Exception Caught...",
+        Common.getDbRequestId(gatewayDbRequestDetails),
         throwable);
 
     Gateway.sendErrorResponse(
         channelHandlerContext,
         HttpResponseStatus.INTERNAL_SERVER_ERROR,
-        "Proxy Handler Exception...");
+        "DB Proxy Handler Exception...");
   }
 
   private GatewayDbRequestDetails extractGatewayDbRequestDetails(
@@ -179,5 +193,11 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
     final String validPassword = CommonUtilities.getSystemEnvProperty(Constants.DB_PROXY_PWD);
 
     return validUsername.equals(username) && validPassword.equals(password);
+  }
+
+  private GatewayDbResponseDetails executeDbAction(
+      final GatewayDbRequestDetails gatewayDbRequestDetails) {
+
+    return null;
   }
 }

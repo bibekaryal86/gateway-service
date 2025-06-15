@@ -1,5 +1,6 @@
 package gateway.service.utils;
 
+import gateway.service.dtos.GatewayDbRequestDetails;
 import gateway.service.dtos.GatewayRequestDetails;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import io.netty.channel.ChannelHandlerContext;
@@ -32,6 +33,12 @@ public class Common {
 
   public static String getRequestId(final GatewayRequestDetails gatewayRequestDetails) {
     return gatewayRequestDetails == null ? "!NULL_GRD!" : gatewayRequestDetails.getRequestId();
+  }
+
+  public static String getDbRequestId(final GatewayDbRequestDetails gatewayDbRequestDetails) {
+    return gatewayDbRequestDetails == null
+        ? "!NULL_GdbRD!"
+        : gatewayDbRequestDetails.getRequestId();
   }
 
   public static CorsHandler newCorsHandler() {

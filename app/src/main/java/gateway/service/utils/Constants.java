@@ -1,5 +1,6 @@
 package gateway.service.utils;
 
+import gateway.service.dtos.GatewayDbRequestDetails;
 import gateway.service.dtos.GatewayRequestDetails;
 import io.netty.util.AttributeKey;
 import java.time.Duration;
@@ -61,7 +62,7 @@ public class Constants {
   // PROXY
   public static final AttributeKey<GatewayRequestDetails> GATEWAY_REQUEST_DETAILS_KEY =
       AttributeKey.valueOf("GATEWAY_REQUEST_DETAILS");
-  public static final AttributeKey<GatewayRequestDetails> GATEWAY_DB_REQUEST_DETAILS_KEY =
+  public static final AttributeKey<GatewayDbRequestDetails> GATEWAY_DB_REQUEST_DETAILS_KEY =
       AttributeKey.valueOf("GATEWAY_DB_REQUEST_DETAILS");
 
   public static final int BOSS_GROUP_THREADS = 1;
