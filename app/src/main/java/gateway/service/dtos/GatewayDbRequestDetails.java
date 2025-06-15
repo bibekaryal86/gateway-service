@@ -2,10 +2,10 @@ package gateway.service.dtos;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class GatewayDbRequestDetails implements Serializable {
+
   private final String requestId;
   private final long startTime;
 
@@ -16,13 +16,13 @@ public class GatewayDbRequestDetails implements Serializable {
   private final String action;
   private final String table;
   // RUD
-  private final Map<String, Object> where;
+  private final List<GatewayDbRequestInputs> where;
   // C
-  private final Map<String, Object> values;
+  private final List<GatewayDbRequestInputs> values;
   // R
   private final List<String> columns;
   // U
-  private final Map<String, Object> set;
+  private final List<GatewayDbRequestInputs> set;
   // Raw
   private final String query;
   private final List<Object> params;
@@ -31,10 +31,10 @@ public class GatewayDbRequestDetails implements Serializable {
       final String database,
       final String action,
       final String table,
-      final Map<String, Object> where,
-      final Map<String, Object> values,
+      final List<GatewayDbRequestInputs> where,
+      final List<GatewayDbRequestInputs> values,
       final List<String> columns,
-      final Map<String, Object> set,
+      final List<GatewayDbRequestInputs> set,
       final String query,
       final List<Object> params) {
     this.requestId = UUID.randomUUID().toString();
@@ -79,11 +79,11 @@ public class GatewayDbRequestDetails implements Serializable {
     return table;
   }
 
-  public Map<String, Object> getWhere() {
+  public List<GatewayDbRequestInputs> getWhere() {
     return where;
   }
 
-  public Map<String, Object> getValues() {
+  public List<GatewayDbRequestInputs> getValues() {
     return values;
   }
 
@@ -91,7 +91,7 @@ public class GatewayDbRequestDetails implements Serializable {
     return columns;
   }
 
-  public Map<String, Object> getSet() {
+  public List<GatewayDbRequestInputs> getSet() {
     return set;
   }
 
@@ -159,5 +159,43 @@ public class GatewayDbRequestDetails implements Serializable {
         + table
         + '\''
         + '}';
+  }
+
+  public static class GatewayDbRequestInputs {
+    private final String theKey;
+    private final Object theValue;
+    private final String theType;
+
+    public GatewayDbRequestInputs(String theKey, Object theValue, String theType) {
+      this.theKey = theKey;
+      this.theValue = theValue;
+      this.theType = theType;
+    }
+
+    public String getTheKey() {
+      return theKey;
+    }
+
+    public Object getTheValue() {
+      return theValue;
+    }
+
+    public String getTheType() {
+      return theType;
+    }
+
+    @Override
+    public String toString() {
+      return "GatewayDbRequestInputs{"
+          + "theKey='"
+          + theKey
+          + '\''
+          + ", theValue="
+          + theValue
+          + ", theType='"
+          + theType
+          + '\''
+          + '}';
+    }
   }
 }
