@@ -2,6 +2,7 @@ package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayDbRequestDetails;
 import gateway.service.dtos.GatewayDbResponseDetails;
+import gateway.service.utils.AppConfigs;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
@@ -15,9 +16,17 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -196,8 +205,69 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
   }
 
   private GatewayDbResponseDetails executeDbAction(
-      final GatewayDbRequestDetails gatewayDbRequestDetails) {
+      final GatewayDbRequestDetails gatewayDbRequestDetails) throws Exception {
+    DataSource dataSource = AppConfigs.getTargetDataSource(gatewayDbRequestDetails.getDatabase());
+    if (dataSource == null) {
+      throw new IllegalStateException("Datasource not found...");
+    }
 
+    try (Connection connection = dataSource.getConnection()) {
+      return switch (gatewayDbRequestDetails.getAction()) {
+        case "CREATE" -> handleCreate(gatewayDbRequestDetails);
+        case "READ" -> handleRead(gatewayDbRequestDetails);
+        case "UPDATE" -> handleUpdate(gatewayDbRequestDetails);
+        case "DELETE" -> handleDelete(gatewayDbRequestDetails);
+        case "RAW" -> handleRaw(gatewayDbRequestDetails);
+        default -> throw new IllegalArgumentException("Invalid Database Action Request...");
+      };
+    }
+  }
+
+  private GatewayDbResponseDetails handleCreate(
+      final GatewayDbRequestDetails gatewayDbRequestDetails) {
     return null;
+  }
+
+  private GatewayDbResponseDetails handleRead(
+      final GatewayDbRequestDetails gatewayDbRequestDetails) {
+    return null;
+  }
+
+  private GatewayDbResponseDetails handleUpdate(
+      final GatewayDbRequestDetails gatewayDbRequestDetails) {
+    return null;
+  }
+
+  private GatewayDbResponseDetails handleDelete(
+      final GatewayDbRequestDetails gatewayDbRequestDetails) {
+    return null;
+  }
+
+  private GatewayDbResponseDetails handleRaw(
+      final GatewayDbRequestDetails gatewayDbRequestDetails) {
+    return null;
+  }
+
+  private List<Map<String, Object>> executeQuery(
+      Connection connection, String query, List<Object> params) throws SQLException {
+    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+      for (int i = 0; i < params.size(); i++) {
+        stmt.setObject(i + 1, params.get(i));
+      }
+
+      ResultSet rs = stmt.executeQuery();
+      List<Map<String, Object>> rows = new ArrayList<>();
+
+      int columnCount = rs.getMetaData().getColumnCount();
+      while (rs.next()) {
+        Map<String, Object> row = new HashMap<>();
+        for (int i = 1; i <= columnCount; i++) {
+          row.put(rs.getMetaData().getColumnName(i), rs.getObject(i));
+        }
+        rows.add(row);
+      }
+
+      return rows;
+    }
   }
 }

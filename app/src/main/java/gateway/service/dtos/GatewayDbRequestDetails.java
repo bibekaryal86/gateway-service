@@ -9,6 +9,8 @@ public class GatewayDbRequestDetails implements Serializable {
   private final String requestId;
   private final long startTime;
 
+  // this is not set for logging and rate limiting
+  // and not received with the request object
   private String clientId;
 
   // CRUD, Raw
@@ -27,6 +29,9 @@ public class GatewayDbRequestDetails implements Serializable {
   private final String query;
   private final List<Object> params;
 
+  // metadata
+  private final GatewayDbRequestMetadata gatewayDbRequestMetadata;
+
   public GatewayDbRequestDetails(
       final String database,
       final String action,
@@ -36,7 +41,8 @@ public class GatewayDbRequestDetails implements Serializable {
       final List<String> columns,
       final List<GatewayDbRequestInputs> set,
       final String query,
-      final List<Object> params) {
+      final List<Object> params,
+      final GatewayDbRequestMetadata gatewayDbRequestMetadata) {
     this.requestId = UUID.randomUUID().toString();
     this.startTime = System.nanoTime();
 
@@ -49,6 +55,7 @@ public class GatewayDbRequestDetails implements Serializable {
     this.set = set;
     this.query = query;
     this.params = params;
+    this.gatewayDbRequestMetadata = gatewayDbRequestMetadata;
   }
 
   public String getRequestId() {
@@ -103,6 +110,10 @@ public class GatewayDbRequestDetails implements Serializable {
     return params;
   }
 
+  public GatewayDbRequestMetadata getGatewayDbRequestMetadata() {
+    return gatewayDbRequestMetadata;
+  }
+
   @Override
   public String toString() {
     return "GatewayDbRequestDetails{"
@@ -136,11 +147,13 @@ public class GatewayDbRequestDetails implements Serializable {
         + '\''
         + ", params="
         + params
+        + ", gatewayDbRequestMetadata="
+        + gatewayDbRequestMetadata
         + '}';
   }
 
   public String toStringLimited() {
-    return "GatewayDbRequestDetails{"
+    return "GatewayDbRequestDetails_Limited{"
         + "requestId='"
         + requestId
         + '\''
@@ -158,6 +171,8 @@ public class GatewayDbRequestDetails implements Serializable {
         + ", table='"
         + table
         + '\''
+        + ", gatewayDbRequestMetadata="
+        + gatewayDbRequestMetadata
         + '}';
   }
 
@@ -194,6 +209,74 @@ public class GatewayDbRequestDetails implements Serializable {
           + theValue
           + ", theType='"
           + theType
+          + '\''
+          + '}';
+    }
+  }
+
+  public static class GatewayDbRequestMetadata {
+    private final int pageNumber;
+    private final int perPage;
+    private final int historyPage;
+    private final int historySize;
+    private final String sortColumn;
+    private final String sortDirection;
+
+    public GatewayDbRequestMetadata(
+        final int pageNumber,
+        final int perPage,
+        final int historyPage,
+        final int historySize,
+        final String sortColumn,
+        final String sortDirection) {
+      this.pageNumber = pageNumber;
+      this.perPage = perPage;
+      this.historyPage = historyPage;
+      this.historySize = historySize;
+      this.sortColumn = sortColumn;
+      this.sortDirection = sortDirection;
+    }
+
+    public int getPageNumber() {
+      return pageNumber;
+    }
+
+    public int getPerPage() {
+      return perPage;
+    }
+
+    public int getHistoryPage() {
+      return historyPage;
+    }
+
+    public int getHistorySize() {
+      return historySize;
+    }
+
+    public String getSortColumn() {
+      return sortColumn;
+    }
+
+    public String getSortDirection() {
+      return sortDirection;
+    }
+
+    @Override
+    public String toString() {
+      return "GatewayDbRequestMetadata{"
+          + "pageNumber="
+          + pageNumber
+          + ", perPage="
+          + perPage
+          + ", historyPage="
+          + historyPage
+          + ", historySize="
+          + historySize
+          + ", sortColumn='"
+          + sortColumn
+          + '\''
+          + ", sortDirection='"
+          + sortDirection
           + '\''
           + '}';
     }
