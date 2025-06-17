@@ -6,7 +6,10 @@ import java.util.List;
 import java.util.Map;
 
 public record GatewayDbResponseDetails(
-    String requestId, List<Map<String, Object>> results, ResponseMetadata responseMetadata)
+    String requestId,
+    List<Map<String, Object>> results,
+    GatewayDbRequestDetails.GatewayDbRequestMetadata requestMetadata,
+    ResponseMetadata responseMetadata)
     implements Serializable {
 
   @Override
@@ -17,6 +20,8 @@ public record GatewayDbResponseDetails(
         + '\''
         + ", results="
         + results
+        + ", requestMetadata="
+        + requestMetadata
         + ", responseMetadata="
         + responseMetadata
         + '}';
