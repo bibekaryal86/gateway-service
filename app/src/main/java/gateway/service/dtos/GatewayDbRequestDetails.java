@@ -1,5 +1,7 @@
 package gateway.service.dtos;
 
+import gateway.service.utils.Common;
+import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
@@ -56,6 +58,11 @@ public class GatewayDbRequestDetails implements Serializable {
     this.query = query;
     this.params = params;
     this.gatewayDbRequestMetadata = gatewayDbRequestMetadata;
+
+    final String validation = Common.validateGatewayDbRequest(this);
+    if (!CommonUtilities.isEmpty(validation)) {
+      throw new IllegalArgumentException(validation);
+    }
   }
 
   public String getRequestId() {

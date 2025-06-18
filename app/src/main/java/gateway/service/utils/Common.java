@@ -8,6 +8,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.codec.http.cors.CorsHandler;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -70,5 +71,32 @@ public class Common {
     }
 
     return remoteAddress;
+  }
+
+  public static String validateGatewayDbRequest(
+      final GatewayDbRequestDetails gatewayDbRequestDetails) {
+    final List<String> errors = new ArrayList<>();
+
+    if (CommonUtilities.isEmpty(gatewayDbRequestDetails.getDatabase())) {
+      errors.add("Database is missing");
+    }
+    if (CommonUtilities.isEmpty(gatewayDbRequestDetails.getAction())) {
+      errors.add("Action is missing");
+    } else if (!gatewayDbRequestDetails.getAction().matches("(?i)CREATE|READ|UPDATE|DELETE|RAW")) {
+      errors.add("Action is invalid");
+    }
+    if (CommonUtilities.isEmpty(gatewayDbRequestDetails.getTable())) {
+      errors.add("Table is missing");
+    }
+    if (gatewayDbRequestDetails.getGatewayDbRequestMetadata() != null
+        && gatewayDbRequestDetails.getGatewayDbRequestMetadata().getSortDirection() != null
+        && !gatewayDbRequestDetails
+            .getGatewayDbRequestMetadata()
+            .getSortDirection()
+            .matches("(?i)ASC|DESC")) {
+      errors.add("Sort Direction is invalid");
+    }
+
+    return errors.isEmpty() ? "" : String.join(";", errors);
   }
 }
