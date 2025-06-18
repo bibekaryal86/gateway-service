@@ -158,6 +158,11 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       requestBody.setClientId(Common.extractClientId(channelHandlerContext));
     }
 
+    final String validation = Common.validateGatewayDbRequest(requestBody);
+    if (!CommonUtilities.isEmpty(validation)) {
+      throw new IllegalArgumentException(validation);
+    }
+
     return requestBody;
   }
 
