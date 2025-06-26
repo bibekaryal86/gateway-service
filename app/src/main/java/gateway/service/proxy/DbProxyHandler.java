@@ -6,6 +6,7 @@ import gateway.service.utils.AppConfigs;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
+import io.github.bibekaryal86.shdsvc.dtos.ResponseMetadata;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
@@ -218,43 +219,53 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
 
     try (Connection connection = dataSource.getConnection()) {
       return switch (gatewayDbRequestDetails.getAction()) {
-        case "CREATE" -> handleCreate(gatewayDbRequestDetails);
-        case "READ" -> handleRead(gatewayDbRequestDetails);
-        case "UPDATE" -> handleUpdate(gatewayDbRequestDetails);
-        case "DELETE" -> handleDelete(gatewayDbRequestDetails);
-        case "RAW" -> handleRaw(gatewayDbRequestDetails);
+        case "CREATE" -> handleCreate(connection, gatewayDbRequestDetails);
+        case "READ" -> handleRead(connection, gatewayDbRequestDetails);
+        case "UPDATE" -> handleUpdate(connection, gatewayDbRequestDetails);
+        case "DELETE" -> handleDelete(connection, gatewayDbRequestDetails);
+        case "RAW" -> handleRaw(connection, gatewayDbRequestDetails);
         default -> throw new IllegalArgumentException("Invalid Database Action Request...");
       };
     }
   }
 
   private GatewayDbResponseDetails handleCreate(
-      final GatewayDbRequestDetails gatewayDbRequestDetails) {
+      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails) {
     return null;
   }
 
   private GatewayDbResponseDetails handleRead(
-      final GatewayDbRequestDetails gatewayDbRequestDetails) {
+      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails) {
     return null;
   }
 
   private GatewayDbResponseDetails handleUpdate(
-      final GatewayDbRequestDetails gatewayDbRequestDetails) {
+      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails) {
     return null;
   }
 
   private GatewayDbResponseDetails handleDelete(
-      final GatewayDbRequestDetails gatewayDbRequestDetails) {
+      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails) {
     return null;
   }
 
-  private GatewayDbResponseDetails handleRaw(
-      final GatewayDbRequestDetails gatewayDbRequestDetails) {
-    return null;
+  private GatewayDbResponseDetails handleRaw(final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails)
+      throws SQLException {
+    if (!gatewayDbRequestDetails.getQuery().trim().toUpperCase().startsWith("SELECT")) {
+      throw new IllegalArgumentException("Raw queries can only be SELECT statements...");
+    }
+
+    final List<Map<String, Object>> results =
+        executeQuery(
+            connection, gatewayDbRequestDetails.getQuery(), gatewayDbRequestDetails.getParams());
+    return new GatewayDbResponseDetails(
+        gatewayDbRequestDetails.getRequestId(),
+        results,
+        GatewayDbRequestDetails.emptyGatewayDbRequestMetadata(),
+        ResponseMetadata.emptyResponseMetadata());
   }
 
-  private List<Map<String, Object>> executeQuery(
-      Connection connection, String query, List<Object> params) throws SQLException {
+  private List<Map<String, Object>> executeQuery(Connection connection, String query, List<Object> params) throws SQLException {
     try (PreparedStatement stmt = connection.prepareStatement(query)) {
       for (int i = 0; i < params.size(); i++) {
         stmt.setObject(i + 1, params.get(i));

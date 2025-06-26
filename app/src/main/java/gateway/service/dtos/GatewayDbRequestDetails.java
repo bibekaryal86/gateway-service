@@ -1,6 +1,7 @@
 package gateway.service.dtos;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,12 +50,12 @@ public class GatewayDbRequestDetails implements Serializable {
     this.database = database;
     this.action = action;
     this.table = table;
-    this.where = where;
-    this.values = values;
-    this.columns = columns;
-    this.set = set;
+    this.where = where == null ? Collections.emptyList() : where;
+    this.values = values == null ? Collections.emptyList() : values;
+    this.columns = columns == null ? Collections.emptyList() : columns;
+    this.set = set == null ? Collections.emptyList() : set;
     this.query = query;
-    this.params = params;
+    this.params = params == null ? Collections.emptyList() : params;
     this.gatewayDbRequestMetadata = gatewayDbRequestMetadata;
   }
 
@@ -112,6 +113,10 @@ public class GatewayDbRequestDetails implements Serializable {
 
   public GatewayDbRequestMetadata getGatewayDbRequestMetadata() {
     return gatewayDbRequestMetadata;
+  }
+
+  public static GatewayDbRequestMetadata emptyGatewayDbRequestMetadata() {
+    return new GatewayDbRequestMetadata(0, 0, 0, 0, "", "");
   }
 
   @Override
@@ -225,14 +230,14 @@ public class GatewayDbRequestDetails implements Serializable {
     public GatewayDbRequestMetadata(
         final int pageNumber,
         final int perPage,
-        final int historyPage,
-        final int historySize,
+        final int totalPages,
+        final int totalItems,
         final String sortColumn,
         final String sortDirection) {
       this.pageNumber = pageNumber;
       this.perPage = perPage;
-      this.historyPage = historyPage;
-      this.historySize = historySize;
+      this.historyPage = totalPages;
+      this.historySize = totalItems;
       this.sortColumn = sortColumn;
       this.sortDirection = sortDirection;
     }
