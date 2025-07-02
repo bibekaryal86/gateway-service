@@ -1,5 +1,7 @@
 package gateway.service.dtos;
 
+import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
@@ -56,7 +58,7 @@ public class GatewayDbRequestDetails implements Serializable {
     this.set = set == null ? Collections.emptyList() : set;
     this.query = query;
     this.params = params == null ? Collections.emptyList() : params;
-    this.gatewayDbRequestMetadata = gatewayDbRequestMetadata;
+    this.gatewayDbRequestMetadata = gatewayDbRequestMetadata == null ? GatewayDbRequestDetails.emptyGatewayDbRequestMetadata() : gatewayDbRequestMetadata;
   }
 
   public String getRequestId() {
@@ -116,7 +118,7 @@ public class GatewayDbRequestDetails implements Serializable {
   }
 
   public static GatewayDbRequestMetadata emptyGatewayDbRequestMetadata() {
-    return new GatewayDbRequestMetadata(0, 0, 0, 0, "", "");
+    return new GatewayDbRequestMetadata(1, 100, "", "ASC");
   }
 
   @Override
@@ -222,24 +224,18 @@ public class GatewayDbRequestDetails implements Serializable {
   public static class GatewayDbRequestMetadata {
     private final int pageNumber;
     private final int perPage;
-    private final int historyPage;
-    private final int historySize;
     private final String sortColumn;
     private final String sortDirection;
 
     public GatewayDbRequestMetadata(
         final int pageNumber,
         final int perPage,
-        final int totalPages,
-        final int totalItems,
         final String sortColumn,
         final String sortDirection) {
       this.pageNumber = pageNumber;
       this.perPage = perPage;
-      this.historyPage = totalPages;
-      this.historySize = totalItems;
-      this.sortColumn = sortColumn;
-      this.sortDirection = sortDirection;
+      this.sortColumn = CommonUtilities.isEmpty(sortColumn) ? "" : sortColumn;
+      this.sortDirection = CommonUtilities.isEmpty(sortDirection) ? "ASC" : sortDirection;;
     }
 
     public int getPageNumber() {
@@ -248,14 +244,6 @@ public class GatewayDbRequestDetails implements Serializable {
 
     public int getPerPage() {
       return perPage;
-    }
-
-    public int getHistoryPage() {
-      return historyPage;
-    }
-
-    public int getHistorySize() {
-      return historySize;
     }
 
     public String getSortColumn() {
@@ -273,10 +261,6 @@ public class GatewayDbRequestDetails implements Serializable {
           + pageNumber
           + ", perPage="
           + perPage
-          + ", historyPage="
-          + historyPage
-          + ", historySize="
-          + historySize
           + ", sortColumn='"
           + sortColumn
           + '\''
