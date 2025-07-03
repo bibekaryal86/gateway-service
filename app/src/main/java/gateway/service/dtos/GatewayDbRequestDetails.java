@@ -1,7 +1,6 @@
 package gateway.service.dtos;
 
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
-
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
@@ -58,7 +57,10 @@ public class GatewayDbRequestDetails implements Serializable {
     this.set = set == null ? Collections.emptyList() : set;
     this.query = query;
     this.params = params == null ? Collections.emptyList() : params;
-    this.gatewayDbRequestMetadata = gatewayDbRequestMetadata == null ? GatewayDbRequestDetails.emptyGatewayDbRequestMetadata() : gatewayDbRequestMetadata;
+    this.gatewayDbRequestMetadata =
+        gatewayDbRequestMetadata == null
+            ? GatewayDbRequestDetails.emptyGatewayDbRequestMetadata()
+            : gatewayDbRequestMetadata;
   }
 
   public String getRequestId() {
@@ -235,7 +237,8 @@ public class GatewayDbRequestDetails implements Serializable {
       this.pageNumber = pageNumber;
       this.perPage = perPage;
       this.sortColumn = CommonUtilities.isEmpty(sortColumn) ? "" : sortColumn;
-      this.sortDirection = CommonUtilities.isEmpty(sortDirection) ? "ASC" : sortDirection;;
+      this.sortDirection = CommonUtilities.isEmpty(sortDirection) ? "ASC" : sortDirection;
+      ;
     }
 
     public int getPageNumber() {

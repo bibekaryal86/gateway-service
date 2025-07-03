@@ -23,6 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,7 +143,7 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       final ChannelHandlerContext channelHandlerContext, final FullHttpRequest fullHttpRequest) {
     GatewayDbRequestDetails requestBody = null;
     try {
-      ByteBuf byteBuf = fullHttpRequest.content();
+      final ByteBuf byteBuf = fullHttpRequest.content();
       if (byteBuf != null) {
         requestBody =
             CommonUtilities.objectMapperProvider()
@@ -212,12 +213,13 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
 
   private GatewayDbResponseDetails executeDbAction(
       final GatewayDbRequestDetails gatewayDbRequestDetails) throws Exception {
-    DataSource dataSource = AppConfigs.getTargetDataSource(gatewayDbRequestDetails.getDatabase());
+    final DataSource dataSource =
+        AppConfigs.getTargetDataSource(gatewayDbRequestDetails.getDatabase());
     if (dataSource == null) {
       throw new IllegalStateException("Datasource not found...");
     }
 
-    try (Connection connection = dataSource.getConnection()) {
+    try (final Connection connection = dataSource.getConnection()) {
       return switch (gatewayDbRequestDetails.getAction()) {
         case "CREATE" -> handleCreate(connection, gatewayDbRequestDetails);
         case "READ" -> handleRead(connection, gatewayDbRequestDetails);
@@ -230,12 +232,54 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
   }
 
   private GatewayDbResponseDetails handleCreate(
-      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails) {
-    return null;
+      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails)
+      throws SQLException {
+    final StringBuilder query =
+        new StringBuilder("INSERT INTO ").append(gatewayDbRequestDetails.getTable()).append(" (");
+    final StringBuilder placeholders = new StringBuilder(" VALUES (");
+    final List<Object> params = new ArrayList<>();
+    boolean first = true;
+    int affectedRows = 0;
+
+    for (final GatewayDbRequestDetails.GatewayDbRequestInputs input :
+        gatewayDbRequestDetails.getValues()) {
+      if (!first) {
+        query.append(", ");
+        placeholders.append(", ");
+      }
+      query.append(input.getTheKey());
+      placeholders.append("?");
+      params.add(input.getTheValue());
+      first = false;
+    }
+
+    query.append(")").append(placeholders).append(")");
+
+    try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+      for (int i = 0; i < params.size(); i++) {
+        stmt.setObject(i + 1, params.get(i));
+      }
+      affectedRows = stmt.executeUpdate();
+    }
+
+    final ResponseMetadata.ResponseCrudInfo responseCrudInfo =
+        new ResponseMetadata.ResponseCrudInfo(affectedRows, 0, 0, 0);
+    final ResponseMetadata responseMetadata =
+        new ResponseMetadata(
+            ResponseMetadata.emptyResponseStatusInfo(),
+            responseCrudInfo,
+            ResponseMetadata.emptyResponsePageInfo());
+    return new GatewayDbResponseDetails(
+        gatewayDbRequestDetails.getRequestId(),
+        Collections.emptyList(),
+        gatewayDbRequestDetails.getGatewayDbRequestMetadata(),
+        responseMetadata);
   }
 
-  private GatewayDbResponseDetails handleRead(final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails) throws SQLException {
-    StringBuilder query = new StringBuilder("SELECT ");
+  private GatewayDbResponseDetails handleRead(
+      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails)
+      throws SQLException {
+    final StringBuilder query = new StringBuilder("SELECT ");
 
     // FROM
     if (CommonUtilities.isEmpty(gatewayDbRequestDetails.getColumns())) {
@@ -247,12 +291,13 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
     query.append(" FROM ").append(gatewayDbRequestDetails.getTable());
 
     // WHERE
-    List<Object> params = new ArrayList<>();
+    final List<Object> params = new ArrayList<>();
     if (!CommonUtilities.isEmpty(gatewayDbRequestDetails.getWhere())) {
       query.append(" WHERE ");
       boolean first = true;
 
-      for (final GatewayDbRequestDetails.GatewayDbRequestInputs wheres : gatewayDbRequestDetails.getWhere()) {
+      for (final GatewayDbRequestDetails.GatewayDbRequestInputs wheres :
+          gatewayDbRequestDetails.getWhere()) {
         if (!first) {
           query.append(" AND ");
         }
@@ -264,7 +309,8 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
     }
 
     // REQUEST METADATA
-    final GatewayDbRequestDetails.GatewayDbRequestMetadata gatewayDbRequestMetadata = gatewayDbRequestDetails.getGatewayDbRequestMetadata();
+    final GatewayDbRequestDetails.GatewayDbRequestMetadata gatewayDbRequestMetadata =
+        gatewayDbRequestDetails.getGatewayDbRequestMetadata();
     int perPage = GatewayDbRequestDetails.emptyGatewayDbRequestMetadata().getPerPage();
     int pageNumber = GatewayDbRequestDetails.emptyGatewayDbRequestMetadata().getPageNumber();
 
@@ -295,62 +341,159 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
 
     final List<Map<String, Object>> results = executeQuery(connection, query.toString(), params);
     final long totalItems = getTotalCount(connection, gatewayDbRequestDetails);
-    final double totalPages = Math.ceil( (double) totalItems / perPage);
-    final ResponseMetadata.ResponsePageInfo responsePageInfo = new ResponseMetadata.ResponsePageInfo((int) totalItems, (int) totalPages, pageNumber, perPage);
-    final ResponseMetadata responseMetadata = new ResponseMetadata(ResponseMetadata.emptyResponseStatusInfo(), ResponseMetadata.emptyResponseCrudInfo(), responsePageInfo);
+    final double totalPages = Math.ceil((double) totalItems / perPage);
+    final ResponseMetadata.ResponsePageInfo responsePageInfo =
+        new ResponseMetadata.ResponsePageInfo(
+            (int) totalItems, (int) totalPages, pageNumber, perPage);
+    final ResponseMetadata responseMetadata =
+        new ResponseMetadata(
+            ResponseMetadata.emptyResponseStatusInfo(),
+            ResponseMetadata.emptyResponseCrudInfo(),
+            responsePageInfo);
 
     return new GatewayDbResponseDetails(
-            gatewayDbRequestDetails.getRequestId(),
-            results,
-            gatewayDbRequestDetails.getGatewayDbRequestMetadata(),
-            responseMetadata);
+        gatewayDbRequestDetails.getRequestId(),
+        results,
+        gatewayDbRequestDetails.getGatewayDbRequestMetadata(),
+        responseMetadata);
   }
 
   private GatewayDbResponseDetails handleUpdate(
-      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails) {
-    return null;
-  }
+      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails)
+      throws SQLException {
+    final StringBuilder query =
+        new StringBuilder("UPDATE ").append(gatewayDbRequestDetails.getTable()).append(" SET ");
+    final List<Object> params = new ArrayList<>();
+    boolean first = true;
+    int affectedRows = 0;
 
-  private GatewayDbResponseDetails handleDelete(
-      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails) {
-    return null;
-  }
+    for (final GatewayDbRequestDetails.GatewayDbRequestInputs set :
+        gatewayDbRequestDetails.getSet()) {
+      if (!first) {
+        query.append(", ");
+      }
 
-  private GatewayDbResponseDetails handleRaw(final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails)
-          throws SQLException {
-    if (!gatewayDbRequestDetails.getQuery().trim().toUpperCase().startsWith("SELECT")) {
-      throw new IllegalArgumentException("Raw queries can only be SELECT statements...");
+      query.append(set.getTheKey()).append(" = ?");
+      params.add(set.getTheValue());
+      first = false;
     }
 
-    final List<Map<String, Object>> results = executeQuery(connection, gatewayDbRequestDetails.getQuery(), gatewayDbRequestDetails.getParams());
-    return new GatewayDbResponseDetails(
-            gatewayDbRequestDetails.getRequestId(),
-            results,
-            GatewayDbRequestDetails.emptyGatewayDbRequestMetadata(),
-            ResponseMetadata.emptyResponseMetadata());
-  }
-
-  private long getTotalCount(final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails) throws SQLException {
-    StringBuilder query = new StringBuilder("SELECT COUNT(*) FROM ").append(gatewayDbRequestDetails.getTable());
-    List<Object> params = new ArrayList<>();
-    boolean first = true;
-
-    for (final GatewayDbRequestDetails.GatewayDbRequestInputs wheres : gatewayDbRequestDetails.getWhere()) {
+    first = true;
+    for (final GatewayDbRequestDetails.GatewayDbRequestInputs where :
+        gatewayDbRequestDetails.getWhere()) {
       if (!first) {
         query.append(" AND ");
       }
 
-      query.append(wheres.getTheKey()).append(" = ?");
-      params.add(wheres.getTheValue());
+      query.append(where.getTheKey()).append(" = ?");
+      params.add(where.getTheValue());
       first = false;
     }
 
-    try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+    try (final PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+      for (int i = 0; i < params.size(); i++) {
+        stmt.setObject(i + 1, params.get(i));
+      }
+      affectedRows = stmt.executeUpdate();
+    }
+
+    final ResponseMetadata.ResponseCrudInfo responseCrudInfo =
+        new ResponseMetadata.ResponseCrudInfo(0, affectedRows, 0, 0);
+    final ResponseMetadata responseMetadata =
+        new ResponseMetadata(
+            ResponseMetadata.emptyResponseStatusInfo(),
+            responseCrudInfo,
+            ResponseMetadata.emptyResponsePageInfo());
+    return new GatewayDbResponseDetails(
+        gatewayDbRequestDetails.getRequestId(),
+        Collections.emptyList(),
+        gatewayDbRequestDetails.getGatewayDbRequestMetadata(),
+        responseMetadata);
+  }
+
+  private GatewayDbResponseDetails handleDelete(
+      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails)
+      throws SQLException {
+    final StringBuilder query =
+        new StringBuilder("DELETE FROM ").append(gatewayDbRequestDetails.getTable());
+    final List<Object> params = new ArrayList<>();
+    boolean first = true;
+    int affectedRows = 0;
+
+    for (final GatewayDbRequestDetails.GatewayDbRequestInputs where :
+        gatewayDbRequestDetails.getWhere()) {
+      if (!first) {
+        query.append(" AND ");
+      }
+
+      query.append(where.getTheKey()).append(" = ?");
+      params.add(where.getTheValue());
+      first = false;
+    }
+
+    try (final PreparedStatement stmt = connection.prepareStatement(query.toString())) {
+      for (int i = 0; i < params.size(); i++) {
+        stmt.setObject(i + 1, params.get(i));
+      }
+      affectedRows = stmt.executeUpdate();
+    }
+
+    final ResponseMetadata.ResponseCrudInfo responseCrudInfo =
+        new ResponseMetadata.ResponseCrudInfo(0, 0, affectedRows, 0);
+    final ResponseMetadata responseMetadata =
+        new ResponseMetadata(
+            ResponseMetadata.emptyResponseStatusInfo(),
+            responseCrudInfo,
+            ResponseMetadata.emptyResponsePageInfo());
+    return new GatewayDbResponseDetails(
+        gatewayDbRequestDetails.getRequestId(),
+        Collections.emptyList(),
+        gatewayDbRequestDetails.getGatewayDbRequestMetadata(),
+        responseMetadata);
+  }
+
+  private GatewayDbResponseDetails handleRaw(
+      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails)
+      throws SQLException {
+    if (!gatewayDbRequestDetails.getQuery().trim().toUpperCase().startsWith("SELECT")) {
+      throw new IllegalArgumentException("Raw queries can only be SELECT statements...");
+    }
+
+    final List<Map<String, Object>> results =
+        executeQuery(
+            connection, gatewayDbRequestDetails.getQuery(), gatewayDbRequestDetails.getParams());
+    return new GatewayDbResponseDetails(
+        gatewayDbRequestDetails.getRequestId(),
+        results,
+        GatewayDbRequestDetails.emptyGatewayDbRequestMetadata(),
+        ResponseMetadata.emptyResponseMetadata());
+  }
+
+  private long getTotalCount(
+      final Connection connection, final GatewayDbRequestDetails gatewayDbRequestDetails)
+      throws SQLException {
+    final StringBuilder query =
+        new StringBuilder("SELECT COUNT(*) FROM ").append(gatewayDbRequestDetails.getTable());
+    final List<Object> params = new ArrayList<>();
+    boolean first = true;
+
+    for (final GatewayDbRequestDetails.GatewayDbRequestInputs where :
+        gatewayDbRequestDetails.getWhere()) {
+      if (!first) {
+        query.append(" AND ");
+      }
+
+      query.append(where.getTheKey()).append(" = ?");
+      params.add(where.getTheValue());
+      first = false;
+    }
+
+    try (final PreparedStatement stmt = connection.prepareStatement(query.toString())) {
       for (int i = 0; i < params.size(); i++) {
         stmt.setObject(i + 1, params.get(i));
       }
 
-      try (ResultSet rs = stmt.executeQuery()) {
+      try (final ResultSet rs = stmt.executeQuery()) {
         if (rs.next()) {
           return rs.getLong(1);
         }
@@ -359,18 +502,19 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
     }
   }
 
-  private List<Map<String, Object>> executeQuery(Connection connection, String query, List<Object> params) throws SQLException {
-    try (PreparedStatement stmt = connection.prepareStatement(query)) {
+  private List<Map<String, Object>> executeQuery(
+      Connection connection, String query, List<Object> params) throws SQLException {
+    try (final PreparedStatement stmt = connection.prepareStatement(query)) {
       for (int i = 0; i < params.size(); i++) {
         stmt.setObject(i + 1, params.get(i));
       }
 
-      ResultSet rs = stmt.executeQuery();
-      List<Map<String, Object>> rows = new ArrayList<>();
+      final ResultSet rs = stmt.executeQuery();
+      final List<Map<String, Object>> rows = new ArrayList<>();
 
-      int columnCount = rs.getMetaData().getColumnCount();
+      final int columnCount = rs.getMetaData().getColumnCount();
       while (rs.next()) {
-        Map<String, Object> row = new HashMap<>();
+        final Map<String, Object> row = new HashMap<>();
         for (int i = 1; i <= columnCount; i++) {
           row.put(rs.getMetaData().getColumnName(i), rs.getObject(i));
         }
