@@ -293,7 +293,7 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       }
     }
 
-    final List<Map<String, Object>> results = executeQuery(connection, gatewayDbRequestDetails.getQuery(), gatewayDbRequestDetails.getParams());
+    final List<Map<String, Object>> results = executeQuery(connection, query.toString(), params);
     final long totalItems = getTotalCount(connection, gatewayDbRequestDetails);
     final double totalPages = Math.ceil( (double) totalItems / perPage);
     final ResponseMetadata.ResponsePageInfo responsePageInfo = new ResponseMetadata.ResponsePageInfo((int) totalItems, (int) totalPages, pageNumber, perPage);
