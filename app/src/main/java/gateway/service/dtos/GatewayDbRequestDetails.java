@@ -1,5 +1,7 @@
 package gateway.service.dtos;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import java.io.Serializable;
 import java.util.Collections;
@@ -34,17 +36,19 @@ public class GatewayDbRequestDetails implements Serializable {
   // metadata
   private final GatewayDbRequestMetadata gatewayDbRequestMetadata;
 
+  @JsonCreator
   public GatewayDbRequestDetails(
-      final String database,
-      final String action,
-      final String table,
-      final List<GatewayDbRequestInputs> where,
-      final List<GatewayDbRequestInputs> values,
-      final List<String> columns,
-      final List<GatewayDbRequestInputs> set,
-      final String query,
-      final List<Object> params,
-      final GatewayDbRequestMetadata gatewayDbRequestMetadata) {
+          @JsonProperty("database") final String database,
+          @JsonProperty("action") final String action,
+          @JsonProperty("table") final String table,
+          @JsonProperty("where") final List<GatewayDbRequestInputs> where,
+          @JsonProperty("values") final List<GatewayDbRequestInputs> values,
+          @JsonProperty("columns") final List<String> columns,
+          @JsonProperty("set") final List<GatewayDbRequestInputs> set,
+          @JsonProperty("query") final String query,
+          @JsonProperty("params") final List<Object> params,
+          @JsonProperty("gatewayDbRequestMetadata") final GatewayDbRequestMetadata gatewayDbRequestMetadata
+  ) {
     this.requestId = UUID.randomUUID().toString();
     this.startTime = System.nanoTime();
 
@@ -55,7 +59,7 @@ public class GatewayDbRequestDetails implements Serializable {
     this.values = values == null ? Collections.emptyList() : values;
     this.columns = columns == null ? Collections.emptyList() : columns;
     this.set = set == null ? Collections.emptyList() : set;
-    this.query = query;
+    this.query = query == null ? "" : query;
     this.params = params == null ? Collections.emptyList() : params;
     this.gatewayDbRequestMetadata =
         gatewayDbRequestMetadata == null
