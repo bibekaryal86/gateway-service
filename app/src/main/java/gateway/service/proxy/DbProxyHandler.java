@@ -151,7 +151,7 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
                     (InputStream) new ByteBufInputStream(byteBuf), GatewayDbRequestDetails.class);
       }
     } catch (Exception ex) {
-      throw new RuntimeException("Error Serializing Request Body...");
+      throw new RuntimeException("Error Serializing Request Body...", ex);
     }
 
     if (requestBody == null) {
