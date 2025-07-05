@@ -194,7 +194,11 @@ public class GatewayDbRequestDetails implements Serializable {
     private final Object theValue;
     private final String theType;
 
-    public GatewayDbRequestInputs(String theKey, Object theValue, String theType) {
+    @JsonCreator
+    public GatewayDbRequestInputs(
+        @JsonProperty("theKey") final String theKey,
+        @JsonProperty("theValue") final Object theValue,
+        @JsonProperty("theType") final String theType) {
       this.theKey = theKey;
       this.theValue = theValue;
       this.theType = theType;
@@ -233,11 +237,12 @@ public class GatewayDbRequestDetails implements Serializable {
     private final String sortColumn;
     private final String sortDirection;
 
+    @JsonCreator
     public GatewayDbRequestMetadata(
-        final int pageNumber,
-        final int perPage,
-        final String sortColumn,
-        final String sortDirection) {
+        @JsonProperty("pageNumber") final int pageNumber,
+        @JsonProperty("perPage") final int perPage,
+        @JsonProperty("sortColumn") final String sortColumn,
+        @JsonProperty("sortDirection") final String sortDirection) {
       this.pageNumber = pageNumber;
       this.perPage = perPage;
       this.sortColumn = CommonUtilities.isEmpty(sortColumn) ? "" : sortColumn;

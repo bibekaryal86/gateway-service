@@ -14,6 +14,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -66,38 +67,48 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
                 gatewayDbRequestDetails.getClientId(),
                 key -> new RateLimiter(Constants.RL_MAX_REQUESTS, Constants.RL_TIME_WINDOW_MILLIS));
 
+        if (!fullHttpRequest.method().equals(HttpMethod.POST)) {
+          circuitBreaker.markFailure();
+          logger.error("[{}] Invalid DB Proxy Request...", gatewayDbRequestDetails.getRequestId());
+          Gateway.sendErrorResponse(
+              channelHandlerContext,
+              HttpResponseStatus.METHOD_NOT_ALLOWED,
+              "Method Not Allowed...");
+          return;
+        }
+
         final boolean isAuthorized =
             checkBasicAuthorization(gatewayDbRequestDetails.getRequestId(), fullHttpRequest);
 
-        if (isAuthorized) {
-          if (!circuitBreaker.allowRequest()) {
-            logger.error(
-                "[{}] CircuitBreaker DB Response: [{}]",
-                gatewayDbRequestDetails.getRequestId(),
-                circuitBreaker);
-            Gateway.sendErrorResponse(
-                channelHandlerContext,
-                HttpResponseStatus.SERVICE_UNAVAILABLE,
-                "Maximum DB Failures Allowed Exceeded...");
-            return;
-          }
-
-          if (!rateLimiter.allowRequest()) {
-            logger.error(
-                "[{}] RateLimiter DB Response: [{}]",
-                gatewayDbRequestDetails.getRequestId(),
-                rateLimiter);
-            Gateway.sendErrorResponse(
-                channelHandlerContext,
-                HttpResponseStatus.TOO_MANY_REQUESTS,
-                "Maximum Request Allowed Exceeded...");
-            return;
-          }
-        } else {
+        if (!isAuthorized) {
           circuitBreaker.markFailure();
           logger.error("[{}] Unauthorized DB Response...", gatewayDbRequestDetails.getRequestId());
           Gateway.sendErrorResponse(
               channelHandlerContext, HttpResponseStatus.UNAUTHORIZED, "Unauthorized Request...");
+          return;
+        }
+
+        if (!circuitBreaker.allowRequest()) {
+          logger.error(
+              "[{}] CircuitBreaker DB Response: [{}]",
+              gatewayDbRequestDetails.getRequestId(),
+              circuitBreaker);
+          Gateway.sendErrorResponse(
+              channelHandlerContext,
+              HttpResponseStatus.SERVICE_UNAVAILABLE,
+              "Maximum DB Failures Allowed Exceeded...");
+          return;
+        }
+
+        if (!rateLimiter.allowRequest()) {
+          logger.error(
+              "[{}] RateLimiter DB Response: [{}]",
+              gatewayDbRequestDetails.getRequestId(),
+              rateLimiter);
+          Gateway.sendErrorResponse(
+              channelHandlerContext,
+              HttpResponseStatus.TOO_MANY_REQUESTS,
+              "Maximum Request Allowed Exceeded...");
           return;
         }
 
