@@ -38,17 +38,17 @@ public class GatewayDbRequestDetails implements Serializable {
 
   @JsonCreator
   public GatewayDbRequestDetails(
-          @JsonProperty("database") final String database,
-          @JsonProperty("action") final String action,
-          @JsonProperty("table") final String table,
-          @JsonProperty("where") final List<GatewayDbRequestInputs> where,
-          @JsonProperty("values") final List<GatewayDbRequestInputs> values,
-          @JsonProperty("columns") final List<String> columns,
-          @JsonProperty("set") final List<GatewayDbRequestInputs> set,
-          @JsonProperty("query") final String query,
-          @JsonProperty("params") final List<Object> params,
-          @JsonProperty("gatewayDbRequestMetadata") final GatewayDbRequestMetadata gatewayDbRequestMetadata
-  ) {
+      @JsonProperty("database") final String database,
+      @JsonProperty("action") final String action,
+      @JsonProperty("table") final String table,
+      @JsonProperty("where") final List<GatewayDbRequestInputs> where,
+      @JsonProperty("values") final List<GatewayDbRequestInputs> values,
+      @JsonProperty("columns") final List<String> columns,
+      @JsonProperty("set") final List<GatewayDbRequestInputs> set,
+      @JsonProperty("query") final String query,
+      @JsonProperty("params") final List<Object> params,
+      @JsonProperty("gatewayDbRequestMetadata")
+          final GatewayDbRequestMetadata gatewayDbRequestMetadata) {
     this.requestId = UUID.randomUUID().toString();
     this.startTime = System.nanoTime();
 
