@@ -201,7 +201,7 @@ public class GatewayDbRequestDetails implements Serializable {
         @JsonProperty("theType") final String theType) {
       this.theKey = theKey;
       this.theValue = theValue;
-      this.theType = theType;
+      this.theType = theType == null ? "" : theType.toUpperCase();
     }
 
     public String getTheKey() {
@@ -247,7 +247,6 @@ public class GatewayDbRequestDetails implements Serializable {
       this.perPage = perPage;
       this.sortColumn = CommonUtilities.isEmpty(sortColumn) ? "" : sortColumn;
       this.sortDirection = CommonUtilities.isEmpty(sortDirection) ? "ASC" : sortDirection;
-      ;
     }
 
     public int getPageNumber() {

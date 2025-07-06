@@ -6,6 +6,7 @@ import gateway.service.utils.AppConfigs;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
+import gateway.service.utils.Validate;
 import io.github.bibekaryal86.shdsvc.dtos.ResponseMetadata;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import io.netty.buffer.ByteBuf;
@@ -144,10 +145,17 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
         Common.getDbRequestId(gatewayDbRequestDetails),
         throwable);
 
-    Gateway.sendErrorResponse(
-        channelHandlerContext,
-        HttpResponseStatus.INTERNAL_SERVER_ERROR,
-        "DB Proxy Handler Exception...");
+    if (throwable instanceof IllegalArgumentException
+        && throwable.getMessage() != null
+        && throwable.getMessage().contains("Request Body Error")) {
+      Gateway.sendErrorResponse(
+          channelHandlerContext, HttpResponseStatus.BAD_REQUEST, throwable.getMessage());
+    } else {
+      Gateway.sendErrorResponse(
+          channelHandlerContext,
+          HttpResponseStatus.INTERNAL_SERVER_ERROR,
+          "DB Proxy Handler Exception...");
+    }
   }
 
   private GatewayDbRequestDetails extractGatewayDbRequestDetails(
@@ -162,18 +170,18 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
                     (InputStream) new ByteBufInputStream(byteBuf), GatewayDbRequestDetails.class);
       }
     } catch (Exception ex) {
-      throw new RuntimeException("Error Serializing Request Body...", ex);
+      throw new RuntimeException("Request Body Error: Serializing...", ex);
     }
 
     if (requestBody == null) {
-      throw new IllegalArgumentException("Request Body is Missing...");
+      throw new IllegalArgumentException("Request Body Error: Missing...");
     } else {
       requestBody.setClientId(Common.extractClientId(channelHandlerContext));
     }
 
-    final String validation = Common.validateGatewayDbRequest(requestBody);
-    if (!CommonUtilities.isEmpty(validation)) {
-      throw new IllegalArgumentException(validation);
+    final String errors = Validate.validateGatewayDbRequestDetails(requestBody);
+    if (!CommonUtilities.isEmpty(errors)) {
+      throw new IllegalArgumentException("Request Body Error: " + errors);
     }
 
     return requestBody;

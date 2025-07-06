@@ -54,6 +54,23 @@ public class Constants {
   public static final String AUTH_APPS_USR = "_usr";
   public static final String AUTH_APPS_PWD = "_pwd";
 
+  public static final List<String> VALID_DATA_TYPES =
+      List.of(
+          "BOOLEAN",
+          "BOOL",
+          "INTEGER",
+          "INT",
+          "BIGINT",
+          "LONG",
+          "DECIMAL",
+          "NUMERIC",
+          "VARCHAR",
+          "CHAR",
+          "TEXT",
+          "JSONB",
+          "DATE",
+          "TIMESTAMP");
+
   // UTILS
   public static final long APP_CONFIGS_REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes
   public static final int DB_CONFIG_MAX_CONNECTIONS = 25;
