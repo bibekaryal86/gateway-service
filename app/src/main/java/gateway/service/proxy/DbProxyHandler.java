@@ -281,7 +281,8 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
 
     query.append(")").append(placeholders).append(")");
 
-    logger.debug(query.toString());
+    logger.info("Query Create: {}", query);
+    logger.info("Params Create: {}", params);
     try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
       for (int i = 0; i < params.size(); i++) {
         stmt.setObject(i + 1, params.get(i));
@@ -323,14 +324,14 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       query.append(" WHERE ");
       boolean first = true;
 
-      for (final GatewayDbRequestDetails.GatewayDbRequestInputs wheres :
+      for (final GatewayDbRequestDetails.GatewayDbRequestInputs where :
           gatewayDbRequestDetails.getWhere()) {
         if (!first) {
           query.append(" AND ");
         }
 
-        query.append(wheres.getTheKey()).append(" = ?");
-        params.add(wheres.getTheValue());
+        query.append(where.getTheKey()).append(" = ?");
+        params.add(convertValue(where.getTheValue(), where.getTheType()));
         first = false;
       }
     }
@@ -366,7 +367,8 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       }
     }
 
-    logger.debug(query.toString());
+    logger.info("Query Read: {}", query);
+    logger.info("Params Read: {}", params);
     final List<Map<String, Object>> results = executeQuery(connection, query.toString(), params);
     final long totalItems = getTotalCount(connection, gatewayDbRequestDetails);
     final double totalPages = Math.ceil((double) totalItems / perPage);
@@ -407,18 +409,23 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
     }
 
     first = true;
-    for (final GatewayDbRequestDetails.GatewayDbRequestInputs where :
-        gatewayDbRequestDetails.getWhere()) {
-      if (!first) {
-        query.append(" AND ");
-      }
+    if (!CommonUtilities.isEmpty(gatewayDbRequestDetails.getWhere())) {
+      query.append(" WHERE ");
 
-      query.append(where.getTheKey()).append(" = ?");
-      params.add(convertValue(where.getTheValue(), where.getTheType()));
-      first = false;
+      for (final GatewayDbRequestDetails.GatewayDbRequestInputs where :
+          gatewayDbRequestDetails.getWhere()) {
+        if (!first) {
+          query.append(" AND ");
+        }
+
+        query.append(where.getTheKey()).append(" = ?");
+        params.add(convertValue(where.getTheValue(), where.getTheType()));
+        first = false;
+      }
     }
 
-    logger.debug(query.toString());
+    logger.info("Query Update: {}", query);
+    logger.info("Params Update: {}", params);
     try (final PreparedStatement stmt = connection.prepareStatement(query.toString())) {
       for (int i = 0; i < params.size(); i++) {
         stmt.setObject(i + 1, params.get(i));
@@ -449,18 +456,23 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
     boolean first = true;
     int affectedRows = 0;
 
-    for (final GatewayDbRequestDetails.GatewayDbRequestInputs where :
-        gatewayDbRequestDetails.getWhere()) {
-      if (!first) {
-        query.append(" AND ");
-      }
+    if (!CommonUtilities.isEmpty(gatewayDbRequestDetails.getWhere())) {
+      query.append(" WHERE ");
 
-      query.append(where.getTheKey()).append(" = ?");
-      params.add(convertValue(where.getTheValue(), where.getTheType()));
-      first = false;
+      for (final GatewayDbRequestDetails.GatewayDbRequestInputs where :
+          gatewayDbRequestDetails.getWhere()) {
+        if (!first) {
+          query.append(" AND ");
+        }
+
+        query.append(where.getTheKey()).append(" = ?");
+        params.add(convertValue(where.getTheValue(), where.getTheType()));
+        first = false;
+      }
     }
 
-    logger.debug(query.toString());
+    logger.info("Query Delete: {}", query);
+    logger.info("Params Delete: {}", params);
     try (final PreparedStatement stmt = connection.prepareStatement(query.toString())) {
       for (int i = 0; i < params.size(); i++) {
         stmt.setObject(i + 1, params.get(i));
@@ -489,7 +501,6 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       throw new IllegalArgumentException("Raw queries can only be SELECT statements...");
     }
 
-    logger.debug(gatewayDbRequestDetails.getQuery());
     final List<Map<String, Object>> results =
         executeQuery(
             connection, gatewayDbRequestDetails.getQuery(), gatewayDbRequestDetails.getParams());
@@ -506,20 +517,25 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
     final StringBuilder query =
         new StringBuilder("SELECT COUNT(*) FROM ").append(gatewayDbRequestDetails.getTable());
     final List<Object> params = new ArrayList<>();
-    boolean first = true;
 
-    for (final GatewayDbRequestDetails.GatewayDbRequestInputs where :
-        gatewayDbRequestDetails.getWhere()) {
-      if (!first) {
-        query.append(" AND ");
+    if (!CommonUtilities.isEmpty(gatewayDbRequestDetails.getWhere())) {
+      query.append(" WHERE ");
+      boolean first = true;
+
+      for (final GatewayDbRequestDetails.GatewayDbRequestInputs where :
+          gatewayDbRequestDetails.getWhere()) {
+        if (!first) {
+          query.append(" AND ");
+        }
+
+        query.append(where.getTheKey()).append(" = ?");
+        params.add(convertValue(where.getTheValue(), where.getTheType()));
+        first = false;
       }
-
-      query.append(where.getTheKey()).append(" = ?");
-      params.add(convertValue(where.getTheValue(), where.getTheType()));
-      first = false;
     }
 
-    logger.debug(query.toString());
+    logger.info("Query Total: {}", query);
+    logger.info("Params Total: {}", params);
     try (final PreparedStatement stmt = connection.prepareStatement(query.toString())) {
       for (int i = 0; i < params.size(); i++) {
         stmt.setObject(i + 1, params.get(i));
@@ -559,7 +575,6 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
 
   private Object convertValue(final Object value, final String type)
       throws IllegalArgumentException {
-    System.out.println("ConvertValue");
     if (value == null) {
       return null;
     }
