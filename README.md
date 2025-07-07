@@ -2,13 +2,16 @@
 
 A small utility for proxying of HTTP traffic. It is a high-performance proxy server built to act as an intermediary
 between requesting clients and requested servers. This forwards requests and responses between the application
-seamlessly.
+seamlessly. In addition, this utility now also supports database proxying, enabling secure and efficient query 
+forwarding. Its flexible architecture allows it to mediate both application-layer and data-layer 
+interactions with minimal configuration.
 
 ### Key Features
 
 * Netty, OkHttp, Security, Customizable
 * Built-in resilience features (Circuit Breakers and Rate Limiters) and logging
 * Request/Response forwarding
+* Database Proxy
 * Dynamic configuration
 
 This proxy application is ideal for scenarios such as load balancing, request inspection, or adding middleware logic
