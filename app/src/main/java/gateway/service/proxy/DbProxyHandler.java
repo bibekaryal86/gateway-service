@@ -18,11 +18,17 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -32,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
+import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -268,12 +275,13 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       }
       query.append(input.getTheKey());
       placeholders.append("?");
-      params.add(input.getTheValue());
+      params.add(convertValue(input.getTheValue(), input.getTheType()));
       first = false;
     }
 
     query.append(")").append(placeholders).append(")");
 
+    logger.debug(query.toString());
     try (PreparedStatement stmt = connection.prepareStatement(query.toString())) {
       for (int i = 0; i < params.size(); i++) {
         stmt.setObject(i + 1, params.get(i));
@@ -358,6 +366,7 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       }
     }
 
+    logger.debug(query.toString());
     final List<Map<String, Object>> results = executeQuery(connection, query.toString(), params);
     final long totalItems = getTotalCount(connection, gatewayDbRequestDetails);
     final double totalPages = Math.ceil((double) totalItems / perPage);
@@ -393,7 +402,7 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       }
 
       query.append(set.getTheKey()).append(" = ?");
-      params.add(set.getTheValue());
+      params.add(convertValue(set.getTheValue(), set.getTheType()));
       first = false;
     }
 
@@ -405,10 +414,11 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       }
 
       query.append(where.getTheKey()).append(" = ?");
-      params.add(where.getTheValue());
+      params.add(convertValue(where.getTheValue(), where.getTheType()));
       first = false;
     }
 
+    logger.debug(query.toString());
     try (final PreparedStatement stmt = connection.prepareStatement(query.toString())) {
       for (int i = 0; i < params.size(); i++) {
         stmt.setObject(i + 1, params.get(i));
@@ -446,10 +456,11 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       }
 
       query.append(where.getTheKey()).append(" = ?");
-      params.add(where.getTheValue());
+      params.add(convertValue(where.getTheValue(), where.getTheType()));
       first = false;
     }
 
+    logger.debug(query.toString());
     try (final PreparedStatement stmt = connection.prepareStatement(query.toString())) {
       for (int i = 0; i < params.size(); i++) {
         stmt.setObject(i + 1, params.get(i));
@@ -478,6 +489,7 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       throw new IllegalArgumentException("Raw queries can only be SELECT statements...");
     }
 
+    logger.debug(gatewayDbRequestDetails.getQuery());
     final List<Map<String, Object>> results =
         executeQuery(
             connection, gatewayDbRequestDetails.getQuery(), gatewayDbRequestDetails.getParams());
@@ -503,10 +515,11 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       }
 
       query.append(where.getTheKey()).append(" = ?");
-      params.add(where.getTheValue());
+      params.add(convertValue(where.getTheValue(), where.getTheType()));
       first = false;
     }
 
+    logger.debug(query.toString());
     try (final PreparedStatement stmt = connection.prepareStatement(query.toString())) {
       for (int i = 0; i < params.size(); i++) {
         stmt.setObject(i + 1, params.get(i));
@@ -541,6 +554,118 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
       }
 
       return rows;
+    }
+  }
+
+  private Object convertValue(final Object value, final String type)
+      throws IllegalArgumentException {
+    System.out.println("ConvertValue");
+    if (value == null) {
+      return null;
+    }
+
+    if (type == null) {
+      return value;
+    }
+
+    String stringValue = value.toString();
+
+    try {
+      switch (type) {
+        // Boolean types
+        case "BOOLEAN":
+        case "BOOL":
+          if (value instanceof Boolean) {
+            return value;
+          }
+          stringValue = stringValue.toLowerCase();
+          return stringValue.equals("true")
+              || stringValue.equals("1")
+              || stringValue.equals("t")
+              || stringValue.equals("y");
+        // Integer types
+        case "INTEGER":
+        case "INT":
+          if (value instanceof Integer) {
+            return value;
+          }
+          return Integer.parseInt(stringValue);
+        // Long/Bigint types
+        case "BIGINT":
+        case "LONG":
+          if (value instanceof Long) {
+            return value;
+          }
+          return Long.parseLong(stringValue);
+
+        // Decimal/Numeric types
+        case "DECIMAL":
+        case "NUMERIC":
+          if (value instanceof BigDecimal) {
+            return value;
+          }
+          return new BigDecimal(stringValue);
+
+        // String types (no conversion needed)
+        case "VARCHAR":
+        case "CHAR":
+        case "TEXT":
+          return stringValue;
+
+        // JSON types
+        case "JSONB":
+          try {
+            PGobject jsonObject = new PGobject();
+            jsonObject.setType("jsonb");
+            jsonObject.setValue(stringValue);
+            return jsonObject;
+          } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid JSON value: " + stringValue, e);
+          }
+
+        // Date types
+        case "DATE":
+          if (value instanceof Date) {
+            return value;
+          }
+          try {
+            LocalDate date = LocalDate.parse(stringValue);
+            return Date.valueOf(date);
+          } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(
+                "Invalid date format. Expected yyyy-MM-dd: " + stringValue, e);
+          }
+
+        // Timestamp types
+        case "TIMESTAMP":
+          if (value instanceof Timestamp) {
+            return value;
+          }
+          try {
+            // Try ISO-8601 format first
+            LocalDateTime dateTime = LocalDateTime.parse(stringValue);
+            return Timestamp.valueOf(dateTime);
+          } catch (DateTimeParseException e1) {
+            try {
+              // Fallback to JDBC timestamp format
+              return Timestamp.valueOf(stringValue);
+            } catch (IllegalArgumentException e2) {
+              throw new IllegalArgumentException(
+                  "Invalid timestamp format. Expected yyyy-MM-dd HH:mm:ss[.SSS] or ISO-8601: "
+                      + stringValue,
+                  e2);
+            }
+          }
+
+        default:
+          return value; // No conversion for unrecognized types
+      }
+    } catch (Exception e) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Request Body Error: Failed to convert value '%s' to type %s: %s",
+              stringValue, type, e.getMessage()),
+          e);
     }
   }
 }
