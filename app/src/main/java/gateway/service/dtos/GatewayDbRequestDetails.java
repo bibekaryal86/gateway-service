@@ -193,15 +193,21 @@ public class GatewayDbRequestDetails implements Serializable {
     private final String theKey;
     private final Object theValue;
     private final String theType;
+    private final boolean theNull;
+    private final boolean theNotNull;
 
     @JsonCreator
     public GatewayDbRequestInputs(
         @JsonProperty("theKey") final String theKey,
         @JsonProperty("theValue") final Object theValue,
-        @JsonProperty("theType") final String theType) {
+        @JsonProperty("theType") final String theType,
+        @JsonProperty("theNull") final boolean theNull,
+        @JsonProperty("theNotNull") final boolean theNotNull) {
       this.theKey = theKey;
       this.theValue = theValue;
       this.theType = theType == null ? "" : theType.toUpperCase();
+      this.theNull = theNull;
+      this.theNotNull = theNotNull;
     }
 
     public String getTheKey() {
@@ -216,6 +222,14 @@ public class GatewayDbRequestDetails implements Serializable {
       return theType;
     }
 
+    public boolean isTheNull() {
+      return theNull;
+    }
+
+    public boolean isTheNotNull() {
+      return theNotNull;
+    }
+
     @Override
     public String toString() {
       return "GatewayDbRequestInputs{"
@@ -227,6 +241,10 @@ public class GatewayDbRequestDetails implements Serializable {
           + ", theType='"
           + theType
           + '\''
+          + ", theNull="
+          + theNull
+          + ", theNotNull="
+          + theNotNull
           + '}';
     }
   }

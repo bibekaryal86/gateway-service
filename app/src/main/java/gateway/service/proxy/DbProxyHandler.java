@@ -330,8 +330,15 @@ public class DbProxyHandler extends ChannelInboundHandlerAdapter {
           query.append(" AND ");
         }
 
-        query.append(where.getTheKey()).append(" = ?");
-        params.add(convertValue(where.getTheValue(), where.getTheType()));
+        if (where.isTheNull()) {
+          query.append(where.getTheKey()).append(" IS NULL");
+        } else if (where.isTheNotNull()) {
+          query.append(where.getTheKey()).append(" IS NOT NULL");
+        } else {
+          query.append(where.getTheKey()).append(" = ?");
+          params.add(convertValue(where.getTheValue(), where.getTheType()));
+        }
+
         first = false;
       }
     }
