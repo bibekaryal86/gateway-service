@@ -1,9 +1,9 @@
 package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
+import gateway.service.utils.AppConfigs;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
-import gateway.service.utils.Routes;
 import gateway.service.utils.Validate;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import io.netty.channel.ChannelDuplexHandler;
@@ -26,10 +26,10 @@ public class SecurityConfig extends ChannelDuplexHandler {
 
       // check if uri is excluded from auth requirements or not needed to modify
       final boolean isNoAuth =
-          Routes.getAuthExclusions().stream()
+          AppConfigs.getRoutes().getAuthExclusions().stream()
               .anyMatch(gatewayRequestDetails.getRequestUriLessApiName()::startsWith);
       final boolean isBasicAuth =
-          Routes.getBasicAuthApis().stream()
+          AppConfigs.getRoutes().getBasicAuthApps().stream()
               .anyMatch(gatewayRequestDetails.getRequestUri()::startsWith);
 
       if (isNoAuth || isBasicAuth) {
@@ -89,9 +89,13 @@ public class SecurityConfig extends ChannelDuplexHandler {
       // do not do it for authsvc, because that expects the bearer token
       if (!gatewayRequestDetails.getApiName().equals(Constants.API_NAME_AUTH_SERVICE)) {
         String appUsername =
-            Routes.getAuthApps().get(gatewayRequestDetails.getApiName() + Constants.AUTH_APPS_USR);
+            AppConfigs.getRoutes()
+                .getAuthApps()
+                .get(gatewayRequestDetails.getApiName() + Constants.AUTH_APPS_USR);
         String appPassword =
-            Routes.getAuthApps().get(gatewayRequestDetails.getApiName() + Constants.AUTH_APPS_PWD);
+            AppConfigs.getRoutes()
+                .getAuthApps()
+                .get(gatewayRequestDetails.getApiName() + Constants.AUTH_APPS_PWD);
 
         if (CommonUtilities.isEmpty(appUsername) || CommonUtilities.isEmpty(appPassword)) {
           logger.error("[{}] Auth Credentials Not Found...", gatewayRequestDetails.getRequestId());

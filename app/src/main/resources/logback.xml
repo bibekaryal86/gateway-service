@@ -14,12 +14,19 @@
         </encoder>
     </appender>
 
+    <appender name="STDOUT_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>256</queueSize> <!-- Optional: default is 256 -->
+        <discardingThreshold>0</discardingThreshold> <!-- Optional: discard if queue full -->
+        <neverBlock>true</neverBlock> <!-- Optional: avoid blocking application threads -->
+        <appender-ref ref="STDOUT" />
+    </appender>
+
     <logger name="io.github.bibekaryal86" level="DEBUG" additivity="false">
-        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="STDOUT_ASYNC"/>
     </logger>
 
     <root level="INFO">
-        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="STDOUT_ASYNC"/>
     </root>
 
 </configuration>

@@ -1,5 +1,6 @@
 package gateway.service.utils;
 
+import gateway.service.dtos.GatewayDbRequestDetails;
 import gateway.service.dtos.GatewayRequestDetails;
 import io.netty.util.AttributeKey;
 import java.time.Duration;
@@ -16,17 +17,22 @@ public class Constants {
   public static final String ENVSVC_BASE_URL = "ENVSVC_BASE_URL";
   public static final String VALIDATE_TOKEN_URL = "VALIDATE_TOKEN_URL";
   public static final String SECRET_KEY = "SECRET_KEY";
+  public static final String DB_PROXY_USR = "DB_PROXY_USR";
+  public static final String DB_PROXY_PWD = "DB_PROXY_PWD";
+
   public static final List<String> ENV_KEY_NAMES =
       List.of(
           ENV_PORT,
           SPRING_PROFILES_ACTIVE,
-          SECRET_KEY,
           ENVSVC_USR,
           ENVSVC_PWD,
           AUTHSVC_USR,
           AUTHSVC_PWD,
           ENVSVC_BASE_URL,
-          VALIDATE_TOKEN_URL);
+          VALIDATE_TOKEN_URL,
+          SECRET_KEY,
+          DB_PROXY_USR,
+          DB_PROXY_PWD);
 
   // ENV DETAILS
   public static final String AUTH_APPS_NAME = "AUTH_APPS";
@@ -34,6 +40,7 @@ public class Constants {
   public static final String BASIC_AUTH_NAME = "BASIC_AUTH_BEGINS_WITH";
   public static final String BASE_URLS_NAME_BEGINS_WITH = "BASE_URLS";
   public static final String PROXY_HEADERS = "PROXY_HEADERS";
+  public static final String AUTH_DBS_NAME = "AUTH_DBS";
 
   // OTHERS
   public static final String API_NAME_AUTH_SERVICE = "authsvc";
@@ -47,15 +54,37 @@ public class Constants {
   public static final String AUTH_APPS_USR = "_usr";
   public static final String AUTH_APPS_PWD = "_pwd";
 
+  public static final List<String> VALID_DATA_TYPES =
+      List.of(
+          "BOOLEAN",
+          "BOOL",
+          "INTEGER",
+          "INT",
+          "BIGINT",
+          "LONG",
+          "DECIMAL",
+          "NUMERIC",
+          "VARCHAR",
+          "CHAR",
+          "TEXT",
+          "JSONB",
+          "DATE",
+          "TIMESTAMP");
+
   // UTILS
-  public static final long ROUTES_REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes
+  public static final long APP_CONFIGS_REFRESH_INTERVAL = 7 * 60 * 1000; // every 7 minutes
+  public static final int DB_CONFIG_MAX_CONNECTIONS = 25;
+  public static final int DB_CONFIG_MIN_IDLE = 2;
 
   // PROXY
   public static final AttributeKey<GatewayRequestDetails> GATEWAY_REQUEST_DETAILS_KEY =
       AttributeKey.valueOf("GATEWAY_REQUEST_DETAILS");
+  public static final AttributeKey<GatewayDbRequestDetails> GATEWAY_DB_REQUEST_DETAILS_KEY =
+      AttributeKey.valueOf("GATEWAY_DB_REQUEST_DETAILS");
 
   public static final int BOSS_GROUP_THREADS = 1;
   public static final int WORKER_GROUP_THREADS = 8;
+  public static final int DB_GROUP_THREADS = 16;
   public static final int CONNECT_TIMEOUT_MILLIS = 5000; // 5 seconds
   public static final int MAX_CONTENT_LENGTH = 1048576; // 1MB
   // CIRCUIT BREAKER
@@ -67,6 +96,7 @@ public class Constants {
   public static final int RL_TIME_WINDOW_MILLIS = 1;
 
   // GATEWAY SERVICE ENDPOINTS
+  public static final String DB_PROXY_ENDPOINT = "/gatewaysvc/db/execute";
   public static final String TESTS_PING = "/" + THIS_APP_NAME + "/tests/ping";
   public static final String TESTS_RESET = "/" + THIS_APP_NAME + "/tests/reset";
   public static final String TESTS_LOGS = "/" + THIS_APP_NAME + "/tests/logs";
