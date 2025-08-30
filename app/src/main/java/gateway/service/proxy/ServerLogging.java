@@ -1,10 +1,10 @@
 package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
+import gateway.service.utils.AppConfigs;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
-import gateway.service.utils.Routes;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -77,26 +77,15 @@ public class ServerLogging extends ChannelDuplexHandler {
     final String requestUri = fullHttpRequest.uri();
     final HttpMethod requestMethod = fullHttpRequest.method();
     final String apiName = extractApiName(requestUri);
-    final String clientId = extractClientId(channelHandlerContext);
-    final String targetBaseUrl = Routes.getTargetBaseUrl(apiName);
+    final String clientId = Common.extractClientId(channelHandlerContext);
+    final String targetBaseUrl = AppConfigs.getTargetBaseUrl(apiName);
+
     if (targetBaseUrl == null) {
       return null;
     }
+
     return new GatewayRequestDetails(
         requestMethod, requestUri, apiName, clientId, targetBaseUrl, startTime);
-  }
-
-  private String extractClientId(final ChannelHandlerContext channelHandlerContext) {
-    String remoteAddress = channelHandlerContext.channel().remoteAddress().toString();
-
-    if (remoteAddress.contains("/")) {
-      remoteAddress = remoteAddress.substring(remoteAddress.indexOf("/") + 1);
-    }
-    if (remoteAddress.contains(":")) {
-      remoteAddress = remoteAddress.substring(0, remoteAddress.indexOf(":"));
-    }
-
-    return remoteAddress;
   }
 
   private String extractApiName(String requestUri) {

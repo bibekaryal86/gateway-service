@@ -1,10 +1,10 @@
 package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
+import gateway.service.utils.AppConfigs;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
-import gateway.service.utils.Routes;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
@@ -41,20 +41,23 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
   }
 
   @Override
-  public void channelRead(@NotNull final ChannelHandlerContext ctx, @NotNull final Object msg)
+  public void channelRead(
+      @NotNull final ChannelHandlerContext channelHandlerContext, @NotNull final Object object)
       throws Exception {
-    if (msg instanceof FullHttpRequest fullHttpRequest) {
+    if (object instanceof FullHttpRequest fullHttpRequest) {
       final GatewayRequestDetails gatewayRequestDetails =
-          ctx.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
+          channelHandlerContext.channel().attr(Constants.GATEWAY_REQUEST_DETAILS_KEY).get();
 
       if (gatewayRequestDetails == null) {
         Gateway.sendErrorResponse(
-            ctx, HttpResponseStatus.BAD_REQUEST, "Gateway Request Details Error...");
+            channelHandlerContext,
+            HttpResponseStatus.BAD_REQUEST,
+            "Gateway Request Details Error...");
         return;
       }
 
       final boolean isGatewaySvcResponse =
-          Gateway.gatewaySvcResponse(gatewayRequestDetails, ctx, fullHttpRequest);
+          Gateway.gatewaySvcResponse(gatewayRequestDetails, channelHandlerContext, fullHttpRequest);
       if (isGatewaySvcResponse) {
         return;
       }
@@ -69,7 +72,9 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
             gatewayRequestDetails.getRequestId(),
             circuitBreaker);
         Gateway.sendErrorResponse(
-            ctx, HttpResponseStatus.SERVICE_UNAVAILABLE, "Maximum Failures Allowed Exceeded...");
+            channelHandlerContext,
+            HttpResponseStatus.SERVICE_UNAVAILABLE,
+            "Maximum Failures Allowed Exceeded...");
         return;
       }
 
@@ -81,7 +86,9 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
         logger.error(
             "[{}] RateLimiter Response: [{}]", gatewayRequestDetails.getRequestId(), rateLimiter);
         Gateway.sendErrorResponse(
-            ctx, HttpResponseStatus.TOO_MANY_REQUESTS, "Maximum Request Allowed Exceeded...");
+            channelHandlerContext,
+            HttpResponseStatus.TOO_MANY_REQUESTS,
+            "Maximum Request Allowed Exceeded...");
         return;
       }
 
@@ -109,14 +116,17 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
         fullHttpResponse
             .headers()
             .set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
-        ctx.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
+        channelHandlerContext
+            .writeAndFlush(fullHttpResponse)
+            .addListener(ChannelFutureListener.CLOSE);
       } catch (Exception ex) {
         circuitBreaker.markFailure();
         logger.error("[{}] Proxy Handler Error...", gatewayRequestDetails.getRequestId(), ex);
-        Gateway.sendErrorResponse(ctx, HttpResponseStatus.BAD_GATEWAY, "Proxy Handler Error...");
+        Gateway.sendErrorResponse(
+            channelHandlerContext, HttpResponseStatus.BAD_GATEWAY, "Proxy Handler Error...");
       }
     } else {
-      super.channelRead(ctx, msg);
+      super.channelRead(channelHandlerContext, object);
     }
   }
 
@@ -148,7 +158,7 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
                 MediaType.parse(HttpHeaderValues.APPLICATION_JSON.toString()));
 
     final Headers.Builder headersBuilder = new Headers.Builder();
-    final List<String> proxyHeaders = Routes.getProxyHeaders();
+    final List<String> proxyHeaders = AppConfigs.getRoutes().getProxyHeaders();
     fullHttpRequest.headers().entries().stream()
         .filter(
             stringStringEntry -> proxyHeaders.contains(stringStringEntry.getKey().toLowerCase()))
