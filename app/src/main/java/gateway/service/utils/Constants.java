@@ -37,10 +37,12 @@ public class Constants {
 
   // OTHERS
   public static final String API_NAME_AUTH_SERVICE = "authsvc";
-  public static final String HEADER_AUTH_APPID = "appid-authorization";
   public static final String THIS_APP_NAME = "gatewaysvc";
   public static final String ENV_PORT_DEFAULT = "8000";
   public static final String PRODUCTION_ENV = "PRODUCTION";
+
+  public static final String HEADER_X_AUTH_APPID = "x-auth-appid";
+  public static final String HEADER_X_AUTH_BEARER = "x-auth-bearer";
 
   public static final String BASIC_AUTH = "Basic ";
   public static final String BEARER_AUTH = "Bearer ";

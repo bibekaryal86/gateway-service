@@ -32,7 +32,8 @@ public class Common {
                 HttpHeaderNames.AUTHORIZATION,
                 HttpHeaderNames.CONTENT_TYPE,
                 HttpHeaderNames.CONTENT_LENGTH,
-                "X-Authorization-AppId")
+                Constants.HEADER_X_AUTH_APPID,
+                Constants.HEADER_X_AUTH_BEARER)
             .build());
   }
 }
