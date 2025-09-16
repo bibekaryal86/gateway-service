@@ -15,6 +15,7 @@ public class Constants {
   public static final String AUTHSVC_PWD = "AUTHSVC_PWD";
   public static final String ENVSVC_BASE_URL = "ENVSVC_BASE_URL";
   public static final String VALIDATE_TOKEN_URL = "VALIDATE_TOKEN_URL";
+  public static final String CHECK_PERMISSIONS_MATCHER = "CHECK_PERMISSIONS_MATCHER";
   public static final String SECRET_KEY = "SECRET_KEY";
   public static final List<String> ENV_KEY_NAMES =
       List.of(
@@ -26,7 +27,8 @@ public class Constants {
           AUTHSVC_USR,
           AUTHSVC_PWD,
           ENVSVC_BASE_URL,
-          VALIDATE_TOKEN_URL);
+          VALIDATE_TOKEN_URL,
+          CHECK_PERMISSIONS_MATCHER);
 
   // ENV DETAILS
   public static final String AUTH_APPS_NAME = "AUTH_APPS";
@@ -42,7 +44,7 @@ public class Constants {
   public static final String PRODUCTION_ENV = "PRODUCTION";
 
   public static final String HEADER_X_AUTH_APPID = "x-auth-appid";
-  public static final String HEADER_X_AUTH_BEARER = "x-auth-bearer";
+  public static final String HEADER_X_AUTH_TOKEN = "x-auth-token";
 
   public static final String BASIC_AUTH = "Basic ";
   public static final String BEARER_AUTH = "Bearer ";

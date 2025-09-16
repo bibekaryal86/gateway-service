@@ -1,6 +1,7 @@
 package gateway.service.proxy;
 
 import gateway.service.dtos.GatewayRequestDetails;
+import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
 import gateway.service.utils.Routes;
@@ -31,14 +32,23 @@ public class SecurityConfig extends ChannelDuplexHandler {
       final boolean isBasicAuth =
           Routes.getBasicAuthApis().stream()
               .anyMatch(gatewayRequestDetails.getRequestUri()::startsWith);
+      final boolean isCheckPermissions = Common.isCheckPermissions(fullHttpRequest);
 
-      if (isNoAuth || isBasicAuth) {
+      if (isNoAuth || isBasicAuth || isCheckPermissions) {
         logger.debug(
-            "[{}] Excluded From Authorization Modification for NoAuth=[{}]...",
+            "[{}] Excluded From Authorization Modification for NoAuth=[{}], BasicAuth=[{}], CheckPermissions=[{}]...",
             gatewayRequestDetails.getRequestId(),
-            isNoAuth);
+            isNoAuth,
+            isBasicAuth,
+            isCheckPermissions);
         super.channelRead(channelHandlerContext, fullHttpRequest);
         return;
+      }
+
+      // put this here so that it can be sent as x-auth-header
+      String authHeader = fullHttpRequest.headers().get(HttpHeaderNames.AUTHORIZATION);
+      if (CommonUtilities.isEmpty(authHeader)) {
+        authHeader = fullHttpRequest.headers().get(HttpHeaderNames.AUTHORIZATION.toLowerCase());
       }
 
       if (!gatewayRequestDetails.getApiName().equals(Constants.THIS_APP_NAME)) {
@@ -57,10 +67,6 @@ public class SecurityConfig extends ChannelDuplexHandler {
         }
 
         // check if there is an auth token
-        String authHeader = fullHttpRequest.headers().get(HttpHeaderNames.AUTHORIZATION);
-        if (CommonUtilities.isEmpty(authHeader)) {
-          authHeader = fullHttpRequest.headers().get(HttpHeaderNames.AUTHORIZATION.toLowerCase());
-        }
         if (CommonUtilities.isEmpty(authHeader) || !authHeader.startsWith(Constants.BEARER_AUTH)) {
           logger.error("[{}] Auth Header Missing/Invalid...", gatewayRequestDetails.getRequestId());
           Gateway.sendErrorResponse(
@@ -103,7 +109,8 @@ public class SecurityConfig extends ChannelDuplexHandler {
             .headers()
             .set(
                 HttpHeaderNames.AUTHORIZATION,
-                CommonUtilities.getBasicAuth(appUsername, appPassword));
+                CommonUtilities.getBasicAuth(appUsername, appPassword))
+            .set(Constants.HEADER_X_AUTH_TOKEN, authHeader);
         logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
       }
     }
