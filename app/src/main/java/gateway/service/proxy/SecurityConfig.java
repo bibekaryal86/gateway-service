@@ -45,7 +45,7 @@ public class SecurityConfig extends ChannelDuplexHandler {
         return;
       }
 
-      // put this here so that it can be sent as x-auth-header
+      // put this here so that it can be sent as x-auth-token
       String authHeader = fullHttpRequest.headers().get(HttpHeaderNames.AUTHORIZATION);
       if (CommonUtilities.isEmpty(authHeader)) {
         authHeader = fullHttpRequest.headers().get(HttpHeaderNames.AUTHORIZATION.toLowerCase());
