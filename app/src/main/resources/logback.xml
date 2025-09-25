@@ -23,9 +23,9 @@
             </appender>
 
             <appender name="FILELOG" class="RollingFileAppender">
-                <file>${REPO_HOME}${LOG_FILE}.log</file>
+                <file>${LOG_FILE}.log</file>
                 <rollingPolicy class="SizeAndTimeBasedRollingPolicy">
-                    <fileNamePattern>${REPO_HOME}${LOG_FILE}_%d{yyyy-MM-dd}_%i.log</fileNamePattern>
+                    <fileNamePattern>${LOG_FILE}_%d{yyyy-MM-dd}_%i.log</fileNamePattern>
                     <maxFileSize>1MB</maxFileSize>
                     <maxHistory>14</maxHistory>
                     <totalSizeCap>14MB</totalSizeCap>
