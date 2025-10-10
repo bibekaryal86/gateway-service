@@ -33,17 +33,17 @@ repositories {
 
 dependencies {
     // from personal library
-    implementation 'io.github.bibekaryal86:shdsvc:1.0.4'
+    implementation 'io.github.bibekaryal86:shdsvc:1.0.6'
     // others
     implementation 'io.netty:netty-all:4.1.119.Final'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.19.0'
-    implementation 'com.squareup.okhttp3:okhttp:5.2.0'
+    implementation 'com.squareup.okhttp3:okhttp:5.2.1'
     implementation 'org.slf4j:slf4j-api:2.0.17'
     implementation 'ch.qos.logback:logback-classic:1.5.18'
     implementation 'org.codehaus.janino:janino:3.1.12'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:6.0.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.12.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:6.0.0'
     testImplementation 'org.mockito:mockito-core:5.18.0'
 }
 
