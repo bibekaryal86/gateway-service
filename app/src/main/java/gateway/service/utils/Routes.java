@@ -1,19 +1,16 @@
 package gateway.service.utils;
 
 import io.github.bibekaryal86.shdsvc.AppEnvProperty;
+import io.github.bibekaryal86.shdsvc.Secrets;
 import io.github.bibekaryal86.shdsvc.dtos.EnvDetailsResponse;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,7 +142,7 @@ public class Routes {
             .stream()
             .collect(
                 Collectors.toMap(
-                    Map.Entry::getKey, entry -> decryptSecret(entry.getValue(), entry.getKey())));
+                    Map.Entry::getKey, entry -> Secrets.decryptSecret(entry.getValue())));
     logger.debug("Gateway Service Env Details Auth Map Size: [{}]", AUTH_APPS.size());
   }
 
@@ -158,35 +155,4 @@ public class Routes {
             .getListValue();
     logger.debug("Gateway Service Env Details Proxy Headers Size: [{}]", PROXY_HEADERS.size());
   }
-
-  private static String decryptSecret(final String encryptedData, final String keyNameForLogging) {
-    final String secretKey = CommonUtilities.getSystemEnvProperty(Constants.SECRET_KEY);
-    final byte[] secretKeyBytes = Arrays.copyOf(secretKey.getBytes(), 32);
-    final SecretKeySpec secretKeySpec = new SecretKeySpec(secretKeyBytes, "AES");
-
-    try {
-      Cipher cipher = Cipher.getInstance("AES");
-      cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
-      byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
-      return new String(decryptedBytes);
-    } catch (Exception ex) {
-      logger.error("Error Decrypting Secret: [{}]", keyNameForLogging, ex);
-      return "";
-    }
-  }
-
-  /*
-  Encrypt method kept here for reference only
-
-  public static String encryptSecret(String data) throws Exception {
-    String secretKey = Common.getSystemEnvProperty(Constants.SECRET_KEY);
-    byte[] secretKeyBytes = Arrays.copyOf(secretKey.getBytes(), 32);
-    SecretKeySpec keySpec = new SecretKeySpec(secretKeyBytes, "AES");
-
-    Cipher cipher = Cipher.getInstance("AES");
-    cipher.init(Cipher.ENCRYPT_MODE, keySpec);
-    byte[] encryptedBytes = cipher.doFinal(data.getBytes());
-    return Base64.getEncoder().encodeToString(encryptedBytes);
-  }
-   */
 }

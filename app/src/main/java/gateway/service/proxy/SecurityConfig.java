@@ -1,11 +1,14 @@
 package gateway.service.proxy;
 
+import gateway.service.dtos.AuthToken;
 import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
 import gateway.service.utils.Gateway;
 import gateway.service.utils.Routes;
 import gateway.service.utils.Validate;
+import io.github.bibekaryal86.shdsvc.Secrets;
+import io.github.bibekaryal86.shdsvc.dtos.HttpResponse;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -51,6 +54,8 @@ public class SecurityConfig extends ChannelDuplexHandler {
         authHeader = fullHttpRequest.headers().get(HttpHeaderNames.AUTHORIZATION.toLowerCase());
       }
 
+      HttpResponse<AuthToken> authTokenHttpResponse = null;
+
       if (!gatewayRequestDetails.getApiName().equals(Constants.THIS_APP_NAME)) {
         // check if there is auth header app id (to validate auth token)
         final String authAppId = fullHttpRequest.headers().get(Constants.HEADER_X_AUTH_APPID);
@@ -77,8 +82,8 @@ public class SecurityConfig extends ChannelDuplexHandler {
         }
 
         // validate the auth token
-        final boolean isValid = Validate.validateToken(authHeader, authHeaderAppId);
-        if (!isValid) {
+        authTokenHttpResponse = Validate.validateToken(authHeader, authHeaderAppId);
+        if (authTokenHttpResponse.statusCode() != 200) {
           logger.error("[{}] Auth Token Not Valid...", gatewayRequestDetails.getRequestId());
           Gateway.sendErrorResponse(
               channelHandlerContext,
@@ -105,12 +110,15 @@ public class SecurityConfig extends ChannelDuplexHandler {
           return;
         }
 
+        final String xAuthToken = authTokenHttpResponse == null ? "" : Secrets.encodeAndSign(authTokenHttpResponse.responseBody());
+
         fullHttpRequest
             .headers()
             .set(
                 HttpHeaderNames.AUTHORIZATION,
                 CommonUtilities.getBasicAuth(appUsername, appPassword))
-            .set(Constants.HEADER_X_AUTH_TOKEN, authHeader);
+            .set(Constants.HEADER_X_AUTH_HEADER, authHeader)
+            .set(Constants.HEADER_X_AUTH_TOKEN, xAuthToken);
         logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
       }
     }
