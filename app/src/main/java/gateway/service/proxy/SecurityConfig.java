@@ -119,6 +119,7 @@ public class SecurityConfig extends ChannelDuplexHandler {
                 CommonUtilities.getBasicAuth(appUsername, appPassword))
             .set(Constants.HEADER_X_AUTH_HEADER, authHeader)
             .set(Constants.HEADER_X_AUTH_TOKEN, xAuthToken);
+
         logger.debug("[{}] Auth Header Updated...", gatewayRequestDetails.getRequestId());
       }
     }

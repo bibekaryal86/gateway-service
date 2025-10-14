@@ -46,6 +46,7 @@ public class Common {
                 HttpHeaderNames.CONTENT_TYPE,
                 HttpHeaderNames.CONTENT_LENGTH,
                 Constants.HEADER_X_AUTH_APPID,
+                Constants.HEADER_X_AUTH_HEADER,
                 Constants.HEADER_X_AUTH_TOKEN)
             .build());
   }
