@@ -16,12 +16,18 @@ public class Constants {
   public static final String ENVSVC_BASE_URL = "ENVSVC_BASE_URL";
   public static final String VALIDATE_TOKEN_URL = "VALIDATE_TOKEN_URL";
   public static final String CHECK_PERMISSIONS_MATCHER = "CHECK_PERMISSIONS_MATCHER";
-  public static final String SECRET_KEY = "SECRET_KEY";
+  public static final String ENV_SECRET_KEY = "SECRET_KEY";
+  public static final String ENV_NEW_LENGTH = "SECRET_LENGTH";
+  public static final String ENV_ALGORITHM1 = "SECRET_ALGO1";
+  public static final String ENV_ALGORITHM2 = "SECRET_ALGO2";
   public static final List<String> ENV_KEY_NAMES =
       List.of(
           ENV_PORT,
           SPRING_PROFILES_ACTIVE,
-          SECRET_KEY,
+          ENV_SECRET_KEY,
+          ENV_NEW_LENGTH,
+          ENV_ALGORITHM1,
+          ENV_ALGORITHM2,
           ENVSVC_USR,
           ENVSVC_PWD,
           AUTHSVC_USR,
@@ -44,6 +50,7 @@ public class Constants {
   public static final String PRODUCTION_ENV = "PRODUCTION";
 
   public static final String HEADER_X_AUTH_APPID = "x-auth-appid";
+  public static final String HEADER_X_AUTH_HEADER = "x-auth-header";
   public static final String HEADER_X_AUTH_TOKEN = "x-auth-token";
 
   public static final String BASIC_AUTH = "Basic ";
