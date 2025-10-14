@@ -12,14 +12,15 @@ public class Validate {
   private static final String VALIDATE_TOKEN_API =
       CommonUtilities.getSystemEnvProperty(Constants.VALIDATE_TOKEN_URL);
 
-  public static HttpResponse<AuthToken> validateToken(final String tokenToValidate, final int appIdToValidate) {
+  public static HttpResponse<AuthToken> validateToken(
+      final String tokenToValidate, final int appIdToValidate) {
     final String validateTokenApiUrl = String.format(VALIDATE_TOKEN_API, appIdToValidate);
-      return Connector.sendRequest(
-              validateTokenApiUrl,
-              Enums.HttpMethod.GET,
-              new TypeReference<AuthToken>() {},
-              tokenToValidate,
-              null,
-              null);
+    return Connector.sendRequest(
+        validateTokenApiUrl,
+        Enums.HttpMethod.GET,
+        new TypeReference<AuthToken>() {},
+        tokenToValidate,
+        null,
+        null);
   }
 }

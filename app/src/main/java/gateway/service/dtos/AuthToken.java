@@ -25,6 +25,37 @@ public class AuthToken {
     this.isSuperUser = isSuperUser;
   }
 
+  public AuthTokenPlatform getPlatform() {
+    return platform;
+  }
+
+  public AuthTokenProfile getProfile() {
+    return profile;
+  }
+
+  public List<AuthTokenRole> getRoles() {
+    return roles;
+  }
+
+  public List<AuthTokenPermission> getPermissions() {
+    return permissions;
+  }
+
+  public Boolean getIsSuperUser() {
+    return isSuperUser;
+  }
+
+  @Override
+  public String toString() {
+    return "AuthToken{" +
+            "platform=" + platform +
+            ", profile=" + profile +
+            ", roles=" + roles +
+            ", permissions=" + permissions +
+            ", isSuperUser=" + isSuperUser +
+            '}';
+  }
+
   public static class AuthTokenPlatform {
     private final long id;
     private final String platformName;
@@ -35,6 +66,22 @@ public class AuthToken {
         @JsonProperty("platformName") final String platformName) {
       this.id = id;
       this.platformName = platformName;
+    }
+
+    public long getId() {
+      return id;
+    }
+
+    public String getPlatformName() {
+      return platformName;
+    }
+
+    @Override
+    public String toString() {
+      return "AuthTokenPlatform{" +
+              "id=" + id +
+              ", platformName='" + platformName + '\'' +
+              '}';
     }
   }
 
@@ -47,6 +94,22 @@ public class AuthToken {
         @JsonProperty("id") final long id, @JsonProperty("email") final String email) {
       this.id = id;
       this.email = email;
+    }
+
+    public long getId() {
+      return id;
+    }
+
+    public String getEmail() {
+      return email;
+    }
+
+    @Override
+    public String toString() {
+      return "AuthTokenProfile{" +
+              "id=" + id +
+              ", email='" + email + '\'' +
+              '}';
     }
   }
 
@@ -61,7 +124,21 @@ public class AuthToken {
       this.roleName = roleName;
     }
 
+    public long getId() {
+      return id;
+    }
 
+    public String getRoleName() {
+      return roleName;
+    }
+
+    @Override
+    public String toString() {
+      return "AuthTokenRole{" +
+              "id=" + id +
+              ", roleName='" + roleName + '\'' +
+              '}';
+    }
   }
 
   public static class AuthTokenPermission {
@@ -76,5 +153,20 @@ public class AuthToken {
       this.permissionName = permissionName;
     }
 
+    public long getId() {
+      return id;
+    }
+
+    public String getPermissionName() {
+      return permissionName;
+    }
+
+    @Override
+    public String toString() {
+      return "AuthTokenPermission{" +
+              "id=" + id +
+              ", permissionName='" + permissionName + '\'' +
+              '}';
+    }
   }
 }
