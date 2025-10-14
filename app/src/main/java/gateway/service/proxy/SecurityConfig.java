@@ -110,7 +110,10 @@ public class SecurityConfig extends ChannelDuplexHandler {
           return;
         }
 
-        final String xAuthToken = authTokenHttpResponse == null ? "" : Secrets.encodeAndSign(authTokenHttpResponse.responseBody());
+        final String xAuthToken =
+            authTokenHttpResponse == null
+                ? ""
+                : Secrets.encodeAndSign(authTokenHttpResponse.responseBody());
 
         fullHttpRequest
             .headers()

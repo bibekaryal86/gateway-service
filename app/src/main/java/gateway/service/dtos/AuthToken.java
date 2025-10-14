@@ -47,13 +47,18 @@ public class AuthToken {
 
   @Override
   public String toString() {
-    return "AuthToken{" +
-            "platform=" + platform +
-            ", profile=" + profile +
-            ", roles=" + roles +
-            ", permissions=" + permissions +
-            ", isSuperUser=" + isSuperUser +
-            '}';
+    return "AuthToken{"
+        + "platform="
+        + platform
+        + ", profile="
+        + profile
+        + ", roles="
+        + roles
+        + ", permissions="
+        + permissions
+        + ", isSuperUser="
+        + isSuperUser
+        + '}';
   }
 
   public static class AuthTokenPlatform {
@@ -78,10 +83,7 @@ public class AuthToken {
 
     @Override
     public String toString() {
-      return "AuthTokenPlatform{" +
-              "id=" + id +
-              ", platformName='" + platformName + '\'' +
-              '}';
+      return "AuthTokenPlatform{" + "id=" + id + ", platformName='" + platformName + '\'' + '}';
     }
   }
 
@@ -106,10 +108,7 @@ public class AuthToken {
 
     @Override
     public String toString() {
-      return "AuthTokenProfile{" +
-              "id=" + id +
-              ", email='" + email + '\'' +
-              '}';
+      return "AuthTokenProfile{" + "id=" + id + ", email='" + email + '\'' + '}';
     }
   }
 
@@ -134,10 +133,7 @@ public class AuthToken {
 
     @Override
     public String toString() {
-      return "AuthTokenRole{" +
-              "id=" + id +
-              ", roleName='" + roleName + '\'' +
-              '}';
+      return "AuthTokenRole{" + "id=" + id + ", roleName='" + roleName + '\'' + '}';
     }
   }
 
@@ -163,10 +159,13 @@ public class AuthToken {
 
     @Override
     public String toString() {
-      return "AuthTokenPermission{" +
-              "id=" + id +
-              ", permissionName='" + permissionName + '\'' +
-              '}';
+      return "AuthTokenPermission{"
+          + "id="
+          + id
+          + ", permissionName='"
+          + permissionName
+          + '\''
+          + '}';
     }
   }
 }
