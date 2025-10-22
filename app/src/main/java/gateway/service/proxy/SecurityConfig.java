@@ -1,6 +1,5 @@
 package gateway.service.proxy;
 
-import gateway.service.dtos.AuthToken;
 import gateway.service.dtos.GatewayRequestDetails;
 import gateway.service.utils.Common;
 import gateway.service.utils.Constants;
@@ -8,6 +7,7 @@ import gateway.service.utils.Gateway;
 import gateway.service.utils.Routes;
 import gateway.service.utils.Validate;
 import io.github.bibekaryal86.shdsvc.Secrets;
+import io.github.bibekaryal86.shdsvc.dtos.AuthToken;
 import io.github.bibekaryal86.shdsvc.dtos.HttpResponse;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import io.netty.channel.ChannelDuplexHandler;
