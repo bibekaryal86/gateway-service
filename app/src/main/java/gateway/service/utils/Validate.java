@@ -1,8 +1,8 @@
 package gateway.service.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import gateway.service.dtos.AuthToken;
 import io.github.bibekaryal86.shdsvc.Connector;
+import io.github.bibekaryal86.shdsvc.dtos.AuthToken;
 import io.github.bibekaryal86.shdsvc.dtos.Enums;
 import io.github.bibekaryal86.shdsvc.dtos.HttpResponse;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
