@@ -52,6 +52,7 @@ public class Constants {
   public static final String HEADER_X_AUTH_APPID = "x-auth-appid";
   public static final String HEADER_X_AUTH_HEADER = "x-auth-header";
   public static final String HEADER_X_AUTH_TOKEN = "x-auth-token";
+  public static final String HEADER_X_AUTH_CSRF = "x-auth-csrf";
 
   public static final String BASIC_AUTH = "Basic ";
   public static final String BEARER_AUTH = "Bearer ";

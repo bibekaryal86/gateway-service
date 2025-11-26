@@ -106,6 +106,13 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
                   HttpResponseStatus.valueOf(response.code()),
                   Unpooled.copiedBuffer(response.body().bytes()));
         }
+
+        for (Map.Entry<String, List<String>> header : response.headers().toMultimap().entrySet()) {
+          for (String value : header.getValue()) {
+            fullHttpResponse.headers().add(header.getKey(), value);
+          }
+        }
+
         fullHttpResponse
             .headers()
             .set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
