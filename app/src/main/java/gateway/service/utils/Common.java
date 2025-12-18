@@ -34,6 +34,7 @@ public class Common {
   public static CorsHandler newCorsHandler() {
     return new CorsHandler(
         CorsConfigBuilder.forAnyOrigin()
+            .allowCredentials()
             .allowedRequestMethods(
                 HttpMethod.GET,
                 HttpMethod.POST,
@@ -47,7 +48,8 @@ public class Common {
                 HttpHeaderNames.CONTENT_LENGTH,
                 Constants.HEADER_X_AUTH_APPID,
                 Constants.HEADER_X_AUTH_HEADER,
-                Constants.HEADER_X_AUTH_TOKEN)
+                Constants.HEADER_X_AUTH_TOKEN,
+                Constants.HEADER_X_AUTH_CSRF)
             .build());
   }
 }

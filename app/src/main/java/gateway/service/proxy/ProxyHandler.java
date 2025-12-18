@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.codec.http.HttpVersion;
 import java.util.List;
 import java.util.Map;
@@ -87,28 +88,35 @@ public class ProxyHandler extends ChannelInboundHandlerAdapter {
 
       try (Response response =
           proxy.proxy(getProxyRequest(gatewayRequestDetails, fullHttpRequest))) {
-
+        logger.info("{}", response.code());
         if (response.code() > 199 && response.code() < 300) {
           circuitBreaker.markSuccess();
         } else {
           circuitBreaker.markFailure();
         }
 
-        FullHttpResponse fullHttpResponse;
-        if (response.body() == null) {
-          fullHttpResponse =
-              new DefaultFullHttpResponse(
-                  HttpVersion.HTTP_1_1, HttpResponseStatus.valueOf(response.code()));
-        } else {
-          fullHttpResponse =
-              new DefaultFullHttpResponse(
-                  HttpVersion.HTTP_1_1,
-                  HttpResponseStatus.valueOf(response.code()),
-                  Unpooled.copiedBuffer(response.body().bytes()));
+        HttpResponseStatus status = HttpResponseStatus.valueOf(response.code());
+        FullHttpResponse fullHttpResponse =
+            new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1, status, Unpooled.copiedBuffer(response.body().bytes()));
+
+        for (Map.Entry<String, List<String>> header : response.headers().toMultimap().entrySet()) {
+          for (String value : header.getValue()) {
+            fullHttpResponse.headers().add(header.getKey(), value);
+          }
         }
-        fullHttpResponse
-            .headers()
-            .set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
+
+        if (List.of(
+                    HttpStatusClass.SUCCESS,
+                    HttpStatusClass.CLIENT_ERROR,
+                    HttpStatusClass.SERVER_ERROR)
+                .contains(status.codeClass())
+            && fullHttpResponse.headers().get(HttpHeaderNames.CONTENT_TYPE) == null) {
+          fullHttpResponse
+              .headers()
+              .set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
+        }
+
         ctx.writeAndFlush(fullHttpResponse).addListener(ChannelFutureListener.CLOSE);
       } catch (Exception ex) {
         circuitBreaker.markFailure();
