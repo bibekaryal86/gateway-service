@@ -15,7 +15,7 @@ buildscript {
 plugins {
     id 'application'
     id 'java'
-    id 'com.diffplug.spotless' version '8.1.0'
+    id 'com.diffplug.spotless' version '8.2.0'
 }
 
 java {
