@@ -35,7 +35,7 @@ dependencies {
     // from personal library
     implementation 'io.github.bibekaryal86:shdsvc:1.0.13'
     // others
-    implementation 'io.netty:netty-all:4.2.13.Final'
+    implementation 'io.netty:netty-all:4.2.15.Final'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.3'
     implementation 'com.squareup.okhttp3:okhttp:5.4.0'
     implementation 'org.slf4j:slf4j-api:2.0.18'
