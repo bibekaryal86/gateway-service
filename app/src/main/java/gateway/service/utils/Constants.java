@@ -20,6 +20,7 @@ public class Constants {
   public static final String ENV_NEW_LENGTH = "SECRET_LENGTH";
   public static final String ENV_ALGORITHM1 = "SECRET_ALGO1";
   public static final String ENV_ALGORITHM2 = "SECRET_ALGO2";
+  public static final String CORS_ALLOWED_HEADERS = "CORS_ALLOWED_HEADERS";
   public static final List<String> ENV_KEY_NAMES =
       List.of(
           ENV_PORT,
@@ -34,7 +35,8 @@ public class Constants {
           AUTHSVC_PWD,
           ENVSVC_BASE_URL,
           VALIDATE_TOKEN_URL,
-          CHECK_PERMISSIONS_MATCHER);
+          CHECK_PERMISSIONS_MATCHER,
+          CORS_ALLOWED_HEADERS);
 
   // ENV DETAILS
   public static final String AUTH_APPS_NAME = "AUTH_APPS";
@@ -52,9 +54,7 @@ public class Constants {
   public static final String HEADER_X_AUTH_APPID = "x-auth-appid";
   public static final String HEADER_X_AUTH_HEADER = "x-auth-header";
   public static final String HEADER_X_AUTH_TOKEN = "x-auth-token";
-  public static final String HEADER_X_AUTH_CSRF = "x-auth-csrf";
 
-  public static final String BASIC_AUTH = "Basic ";
   public static final String BEARER_AUTH = "Bearer ";
   public static final String AUTH_APPS_USR = "_usr";
   public static final String AUTH_APPS_PWD = "_pwd";

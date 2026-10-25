@@ -8,7 +8,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
@@ -21,8 +22,10 @@ public class NettyServer {
   private static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
 
   public void start() throws Exception {
-    final EventLoopGroup bossGroup = new NioEventLoopGroup(Constants.BOSS_GROUP_THREADS);
-    final EventLoopGroup workerGroup = new NioEventLoopGroup(Constants.WORKER_GROUP_THREADS);
+    final EventLoopGroup bossGroup =
+        new MultiThreadIoEventLoopGroup(Constants.BOSS_GROUP_THREADS, NioIoHandler.newFactory());
+    final EventLoopGroup workerGroup =
+        new MultiThreadIoEventLoopGroup(Constants.WORKER_GROUP_THREADS, NioIoHandler.newFactory());
 
     try {
       final ServerBootstrap serverBootstrap = new ServerBootstrap();
