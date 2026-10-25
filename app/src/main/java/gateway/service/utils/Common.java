@@ -3,7 +3,6 @@ package gateway.service.utils;
 import gateway.service.dtos.GatewayRequestDetails;
 import io.github.bibekaryal86.shdsvc.helpers.CommonUtilities;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.codec.http.cors.CorsHandler;
@@ -12,15 +11,13 @@ import java.util.regex.Pattern;
 public class Common {
 
   private static final Pattern PERMISSIONS_URL_PATTERN;
+  private static final String[] CORS_ALLOWED_HEADERS;
 
   static {
     PERMISSIONS_URL_PATTERN =
         Pattern.compile(CommonUtilities.getSystemEnvProperty(Constants.CHECK_PERMISSIONS_MATCHER));
-  }
-
-  public static boolean isProduction() {
-    return Constants.PRODUCTION_ENV.equalsIgnoreCase(
-        CommonUtilities.getSystemEnvProperty(Constants.SPRING_PROFILES_ACTIVE));
+    CORS_ALLOWED_HEADERS =
+        CommonUtilities.getSystemEnvProperty(Constants.CORS_ALLOWED_HEADERS).split(",");
   }
 
   public static String getRequestId(final GatewayRequestDetails gatewayRequestDetails) {
@@ -42,14 +39,7 @@ public class Common {
                 HttpMethod.PATCH,
                 HttpMethod.DELETE,
                 HttpMethod.OPTIONS)
-            .allowedRequestHeaders(
-                HttpHeaderNames.AUTHORIZATION,
-                HttpHeaderNames.CONTENT_TYPE,
-                HttpHeaderNames.CONTENT_LENGTH,
-                Constants.HEADER_X_AUTH_APPID,
-                Constants.HEADER_X_AUTH_HEADER,
-                Constants.HEADER_X_AUTH_TOKEN,
-                Constants.HEADER_X_AUTH_CSRF)
+            .allowedRequestHeaders(CORS_ALLOWED_HEADERS)
             .build());
   }
 }
