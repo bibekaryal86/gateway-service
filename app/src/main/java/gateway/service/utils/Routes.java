@@ -80,15 +80,14 @@ public class Routes {
 
     Runtime.getRuntime()
         .addShutdownHook(
-            new Thread(
-                () -> {
-                  logger.info("Stopping Routes Timer...");
-                  if (timer != null) {
-                    timer.cancel();
-                    timer.purge();
-                    timer = null;
-                  }
-                }));
+            new Thread(() -> {
+              logger.info("Stopping Routes Timer...");
+              if (timer != null) {
+                timer.cancel();
+                timer.purge();
+                timer = null;
+              }
+            }));
   }
 
   private static void setAuthExclusions(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
@@ -114,17 +113,15 @@ public class Routes {
   private static void setRoutesMap(final List<EnvDetailsResponse.EnvDetails> envDetailsList) {
     ROUTES_MAP =
         envDetailsList.stream()
-            .filter(
-                envDetail ->
-                    envDetail
-                        .getName()
-                        .equals(
-                            String.format(
-                                "%s_%s",
-                                Constants.BASE_URLS_NAME_BEGINS_WITH,
-                                CommonUtilities.getSystemEnvProperty(
-                                        Constants.SPRING_PROFILES_ACTIVE)
-                                    .toUpperCase())))
+            .filter(envDetail ->
+                envDetail
+                    .getName()
+                    .equals(
+                        String.format(
+                            "%s_%s",
+                            Constants.BASE_URLS_NAME_BEGINS_WITH,
+                            CommonUtilities.getSystemEnvProperty(Constants.SPRING_PROFILES_ACTIVE)
+                                .toUpperCase())))
             .findFirst()
             .orElseThrow()
             .getMapValue();
